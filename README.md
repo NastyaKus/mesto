@@ -90,10 +90,26 @@ prisma/schema.prisma              — модель данных
 ## Деплой на Vercel
 
 1. Запушьте репозиторий на GitHub, импортируйте проект в [Vercel](https://vercel.com/new).
-2. В настройках проекта задайте переменные окружения: `DATABASE_URL` (тот же Neon) и `AUTH_SECRET` (сгенерируйте `npx auth secret`).
-3. Vercel сам выполнит `npm run build`. Миграции примените локально (`npm run db:migrate`) или добавьте `prisma migrate deploy` в build-команду.
+2. Environment Variables: `DATABASE_URL` (тот же Neon) и `AUTH_SECRET` (`npx auth secret`).
+3. Deploy. Миграции применяются автоматически — скрипт `vercel-build` выполняет `prisma migrate deploy && next build`.
 
-⚠️ **Загрузка картинок файлом** сейчас пишет в `public/uploads` — это работает локально, но **не на Vercel** (там файловая система только для чтения). Для продакшна замените роут `api/upload` на облачное хранилище (Vercel Blob, S3, UploadThing). Вставка картинок по ссылке работает везде.
+### Загрузка картинок (Vercel Blob)
+
+Роут `api/upload` работает гибридно: локально пишет в `public/uploads`, а в проде — в **Vercel Blob** (если задан `BLOB_READ_WRITE_TOKEN`).
+
+Чтобы включить на Vercel: **Storage → Create Database → Blob → Connect** к проекту. Vercel сам добавит `BLOB_READ_WRITE_TOKEN` в переменные окружения. После этого сделайте Redeploy — загрузка файлов заработает. (Вставка по ссылке работает и без Blob.)
+
+## Обновления
+
+Проект деплоится из GitHub — Vercel следит за веткой `main`:
+
+```bash
+git add -A
+git commit -m "что изменил"
+git push
+```
+
+Push в `main` → Vercel автоматически пересобирает и публикует прод. Пуш в другую ветку / Pull Request → создаётся **Preview**-деплой с отдельной ссылкой (прод не трогается). Изменения в схеме БД накатываются миграцией: создайте её локально `npm run db:migrate`, закоммитьте папку `prisma/migrations`, и `vercel-build` применит её на проде.
 
 ## Технические заметки
 
