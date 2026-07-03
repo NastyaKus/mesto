@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
+import { put } from "@vercel/blob";
 import { auth } from "@/auth";
 
 const MAX_BYTES = 5 * 1024 * 1024; // 5 МБ
@@ -12,9 +13,9 @@ const ALLOWED: Record<string, string> = {
   "image/webp": "webp",
 };
 
-// Загрузка изображения: сохраняет файл в public/uploads и возвращает его URL.
-// Примечание: для продакшна на serverless (Vercel) нужно облачное хранилище —
-// локальная ФС там только для чтения. Для локальной разработки этого достаточно.
+// Загрузка изображения.
+// На Vercel (есть BLOB_READ_WRITE_TOKEN) — в Vercel Blob.
+// Локально — на диск в public/uploads. Возвращает URL картинки.
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -35,17 +36,24 @@ export async function POST(req: Request) {
     );
   }
   if (file.size > MAX_BYTES) {
-    return NextResponse.json(
-      { error: "Файл больше 5 МБ" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Файл больше 5 МБ" }, { status: 400 });
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
   const name = `${randomBytes(12).toString("hex")}.${ext}`;
+
+  // Прод: облачное хранилище Vercel Blob.
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    const blob = await put(`uploads/${name}`, file, {
+      access: "public",
+      contentType: file.type,
+    });
+    return NextResponse.json({ url: blob.url });
+  }
+
+  // Локальная разработка: пишем на диск.
+  const buffer = Buffer.from(await file.arrayBuffer());
   const dir = path.join(process.cwd(), "public", "uploads");
   await mkdir(dir, { recursive: true });
   await writeFile(path.join(dir, name), buffer);
-
   return NextResponse.json({ url: `/uploads/${name}` });
 }
