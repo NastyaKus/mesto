@@ -1,0 +1,206 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f4f5fa; /* мягкий сиренево-серый фон */
+  --surface: #ffffff;
+  --surface-2: #f7f8fc; /* вложенные блоки */
+  --foreground: #14152a;
+  --muted: #7b7d95;
+  --brand: #6c5ce7; /* фирменный фиолетовый mesto */
+  --brand-2: #a855f7; /* второй цвет градиента */
+  --brand-hover: #5b4bd1;
+  --border: #ececf4;
+  --like: #f43f5e;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-brand: var(--brand);
+  --color-brand-2: var(--brand-2);
+  --color-brand-hover: var(--brand-hover);
+  --color-border: var(--border);
+  --color-like: var(--like);
+  --font-sans: var(--font-geist-sans);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family:
+    var(--font-geist-sans),
+    -apple-system,
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+}
+
+/* ===== Брендинг ===== */
+.brand-gradient {
+  background: linear-gradient(120deg, var(--brand), var(--brand-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.bg-brand-gradient {
+  background: linear-gradient(120deg, var(--brand), var(--brand-2));
+}
+
+/* ===== Анимации ===== */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-fade-in {
+  animation: fade-in 0.3s ease both;
+}
+.animate-pop {
+  animation: pop 0.35s ease;
+}
+
+/* Появление элементов списка каскадом */
+.stagger > * {
+  animation: fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.stagger > *:nth-child(1) {
+  animation-delay: 0.02s;
+}
+.stagger > *:nth-child(2) {
+  animation-delay: 0.06s;
+}
+.stagger > *:nth-child(3) {
+  animation-delay: 0.1s;
+}
+.stagger > *:nth-child(4) {
+  animation-delay: 0.14s;
+}
+.stagger > *:nth-child(5) {
+  animation-delay: 0.18s;
+}
+.stagger > *:nth-child(n + 6) {
+  animation-delay: 0.22s;
+}
+
+/* ===== Переиспользуемые классы ===== */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px rgba(20, 21, 42, 0.04);
+}
+
+.btn-primary {
+  background: linear-gradient(120deg, var(--brand), var(--brand-2));
+  color: #fff;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
+  box-shadow: 0 4px 14px rgba(108, 92, 231, 0.3);
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(108, 92, 231, 0.4);
+}
+.btn-primary:active {
+  transform: translateY(0);
+}
+.btn-primary:disabled {
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-ghost {
+  background: var(--surface-2);
+  color: var(--foreground);
+  border-radius: 0.75rem;
+  font-weight: 500;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+.btn-ghost:hover {
+  background: var(--border);
+}
+.btn-ghost:active {
+  transform: scale(0.97);
+}
+
+.input {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  border-radius: 0.75rem;
+  padding: 0.55rem 0.85rem;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.input:focus {
+  border-color: var(--brand);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.12);
+}
+
+.spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  .stagger > *,
+  .animate-fade-up,
+  .animate-fade-in,
+  .animate-pop {
+    animation: none !important;
+  }
+}
