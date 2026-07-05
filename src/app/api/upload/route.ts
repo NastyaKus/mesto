@@ -70,8 +70,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ url: `/uploads/${name}` });
   } catch (err) {
     console.error("upload error:", err);
+    // Показываем реальный текст ошибки, чтобы было видно причину.
+    const detail = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
-      { error: "Не удалось загрузить файл" },
+      { error: `Ошибка: ${detail}` },
       { status: 500 },
     );
   }
