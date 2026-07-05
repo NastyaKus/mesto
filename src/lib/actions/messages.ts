@@ -23,11 +23,17 @@ export async function startConversation(otherId: string) {
   redirect(`/messages/${id}`);
 }
 
-/** Отправить сообщение в диалог. */
-export async function sendMessage(conversationId: string, content: string) {
+/** Отправить сообщение в диалог (текст и/или картинка). */
+export async function sendMessage(
+  conversationId: string,
+  content: string,
+  imageUrl?: string,
+) {
   const userId = await requireUserId();
   const text = content.trim();
-  if (!text) return;
+  const image = imageUrl?.trim() || null;
+  // Пустое сообщение без картинки не отправляем.
+  if (!text && !image) return;
 
   // Убеждаемся, что отправитель — участник диалога.
   const access = await getConversationWith(conversationId, userId);
@@ -36,7 +42,12 @@ export async function sendMessage(conversationId: string, content: string) {
   const now = new Date();
   await prisma.$transaction([
     prisma.message.create({
-      data: { conversationId, senderId: userId, content: text.slice(0, 2000) },
+      data: {
+        conversationId,
+        senderId: userId,
+        content: text.slice(0, 2000),
+        imageUrl: image,
+      },
     }),
     prisma.conversation.update({
       where: { id: conversationId },

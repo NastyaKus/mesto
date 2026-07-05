@@ -1,6 +1,6 @@
-/* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { Avatar } from "@/components/ui/avatar";
+import { Lightbox } from "@/components/ui/lightbox";
 import { PostInteractions } from "@/components/post-interactions";
 import { DeletePostButton } from "@/components/delete-post-button";
 import { timeAgo } from "@/lib/format";
@@ -59,9 +59,8 @@ export function PostCard({ post }: { post: FeedPost }) {
       <p className="mt-3 whitespace-pre-wrap break-words">{post.content}</p>
 
       {post.imageUrl && (
-        <img
+        <Lightbox
           src={post.imageUrl}
-          alt=""
           className="mt-3 max-h-[500px] w-full rounded-xl object-cover"
         />
       )}

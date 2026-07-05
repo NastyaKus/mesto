@@ -24,7 +24,11 @@ model User {
   username     String   @unique
   displayName  String
   avatarUrl    String?
+  coverUrl     String? // обложка профиля
   bio          String?
+  status       String? // короткий статус под именем
+  location     String? // город
+  website      String? // ссылка на сайт/соцсеть
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -134,6 +138,7 @@ model Message {
   conversationId String
   senderId       String
   content        String
+  imageUrl       String? // прикреплённая картинка
   readAt         DateTime?
   createdAt      DateTime  @default(now())
 

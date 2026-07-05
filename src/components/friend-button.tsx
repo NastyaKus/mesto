@@ -12,14 +12,16 @@ import {
 type Props = {
   targetId: string;
   state: FriendState;
+  // Компактный режим для узких мест (правая колонка).
+  compact?: boolean;
 };
 
-const primaryBtn = "btn-primary px-4 py-1.5 text-sm";
-const secondaryBtn = "btn-ghost px-4 py-1.5 text-sm disabled:opacity-60";
-
 // Кнопка(и) управления дружбой. Меняет вид в зависимости от состояния.
-export function FriendButton({ targetId, state }: Props) {
+export function FriendButton({ targetId, state, compact }: Props) {
   const [pending, startTransition] = useTransition();
+
+  const primaryBtn = `btn-primary text-sm ${compact ? "w-full px-3 py-1" : "px-4 py-1.5"}`;
+  const secondaryBtn = `btn-ghost text-sm disabled:opacity-60 ${compact ? "w-full px-3 py-1" : "px-4 py-1.5"}`;
 
   if (state === "SELF") return null;
 
@@ -32,7 +34,7 @@ export function FriendButton({ targetId, state }: Props) {
         onClick={run(() => sendFriendRequest(targetId))}
         className={primaryBtn}
       >
-        Добавить в друзья
+        {compact ? "＋ Добавить" : "Добавить в друзья"}
       </button>
     );
   }
@@ -44,7 +46,7 @@ export function FriendButton({ targetId, state }: Props) {
         onClick={run(() => removeFriend(targetId))}
         className={secondaryBtn}
       >
-        Отменить заявку
+        {compact ? "Заявка отправлена" : "Отменить заявку"}
       </button>
     );
   }

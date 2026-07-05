@@ -14,7 +14,11 @@ export const publicUserSelect = {
   username: true,
   displayName: true,
   avatarUrl: true,
+  coverUrl: true,
   bio: true,
+  status: true,
+  location: true,
+  website: true,
   createdAt: true,
 } as const;
 
@@ -80,5 +84,25 @@ export function countFriends(userId: string) {
       status: "ACCEPTED",
       OR: [{ requesterId: userId }, { addresseeId: userId }],
     },
+  });
+}
+
+/** Рекомендации: люди, с которыми ещё нет никакой связи. */
+export async function getFriendSuggestions(userId: string, take = 5) {
+  const links = await prisma.friendship.findMany({
+    where: { OR: [{ requesterId: userId }, { addresseeId: userId }] },
+    select: { requesterId: true, addresseeId: true },
+  });
+  const connected = new Set<string>([userId]);
+  for (const l of links) {
+    connected.add(l.requesterId);
+    connected.add(l.addresseeId);
+  }
+
+  return prisma.user.findMany({
+    where: { id: { notIn: [...connected] } },
+    select: publicUserSelect,
+    orderBy: { createdAt: "desc" },
+    take,
   });
 }

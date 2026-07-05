@@ -37,24 +37,40 @@ export default async function ProfilePage({
   ]);
 
   const isSelf = state === "SELF";
+  const joined = new Date(profile.createdAt).toLocaleDateString("ru-RU", {
+    month: "long",
+    year: "numeric",
+  });
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Шапка профиля с обложкой-градиентом */}
+      {/* Шапка профиля с обложкой */}
       <section className="card animate-fade-up overflow-hidden p-0">
-        <div className="bg-brand-gradient h-28" />
+        {profile.coverUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={profile.coverUrl}
+            alt=""
+            className="h-36 w-full object-cover"
+          />
+        ) : (
+          <div className="bg-brand-gradient h-36" />
+        )}
         <div className="px-5 pb-5">
-          <div className="-mt-10 flex items-end gap-4">
+          <div className="-mt-12 flex flex-wrap items-end gap-4">
             <div className="rounded-full ring-4 ring-surface">
               <Avatar
                 src={profile.avatarUrl}
                 name={profile.displayName}
-                size={88}
+                size={96}
               />
             </div>
-            <div className="mb-1 flex-1">
+            <div className="mb-1 min-w-0 flex-1">
               <h1 className="text-xl font-bold">{profile.displayName}</h1>
               <div className="text-sm text-muted">@{profile.username}</div>
+              {profile.status && (
+                <div className="mt-1 text-sm">{profile.status}</div>
+              )}
             </div>
             <div className="mb-1 flex items-center gap-2">
               {isSelf ? (
@@ -69,10 +85,35 @@ export default async function ProfilePage({
               )}
             </div>
           </div>
+
           {profile.bio && <p className="mt-3 text-sm">{profile.bio}</p>}
-          <div className="mt-3 text-sm text-muted">
-            <span className="font-semibold text-foreground">{friendsCount}</span>{" "}
-            друзей
+
+          {/* Мета-информация */}
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
+            {profile.location && <span>📍 {profile.location}</span>}
+            {profile.website && (
+              <a
+                href={profile.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-brand hover:underline"
+              >
+                🔗 {profile.website.replace(/^https?:\/\//, "")}
+              </a>
+            )}
+            <span>📅 на mesto с {joined}</span>
+          </div>
+
+          {/* Счётчики */}
+          <div className="mt-4 flex gap-6 border-t border-border pt-3 text-sm">
+            <span>
+              <span className="font-semibold">{friendsCount}</span>{" "}
+              <span className="text-muted">друзей</span>
+            </span>
+            <span>
+              <span className="font-semibold">{posts.length}</span>{" "}
+              <span className="text-muted">записей</span>
+            </span>
           </div>
         </div>
       </section>

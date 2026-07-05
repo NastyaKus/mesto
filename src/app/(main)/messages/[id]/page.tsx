@@ -23,6 +23,7 @@ export default async function ConversationPage({
     id: m.id,
     senderId: m.senderId,
     content: m.content,
+    imageUrl: m.imageUrl,
     createdAt: m.createdAt.toISOString(),
   }));
 

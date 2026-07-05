@@ -15,21 +15,30 @@ export async function updateProfile(
 
   const parsed = profileUpdateSchema.safeParse({
     displayName: formData.get("displayName"),
+    status: formData.get("status"),
     bio: formData.get("bio"),
+    location: formData.get("location"),
+    website: formData.get("website"),
     avatarUrl: formData.get("avatarUrl"),
+    coverUrl: formData.get("coverUrl"),
   });
 
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const { displayName, bio, avatarUrl } = parsed.data;
+  const { displayName, status, bio, location, website, avatarUrl, coverUrl } =
+    parsed.data;
   const user = await prisma.user.update({
     where: { id: session.user.id },
     data: {
       displayName,
+      status: status || null,
       bio: bio || null,
+      location: location || null,
+      website: website || null,
       avatarUrl: avatarUrl || null,
+      coverUrl: coverUrl || null,
     },
     select: { username: true },
   });

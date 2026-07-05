@@ -47,7 +47,7 @@ export default async function MessagesPage() {
                   <span className="truncate text-sm text-muted">
                     {c.lastMessage
                       ? (c.lastMessage.senderId === me.id ? "Вы: " : "") +
-                        c.lastMessage.content
+                        (c.lastMessage.content || "📷 Фото")
                       : "Нет сообщений"}
                   </span>
                   {c.unread > 0 && (
