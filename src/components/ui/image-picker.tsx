@@ -25,8 +25,23 @@ export function ImagePicker({ name, defaultValue }: Props) {
       const fd = new FormData();
       fd.append("file", file);
       const res = await fetch("/api/upload", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Ошибка загрузки");
+
+      // Ответ может быть пустым или не-JSON (например, при 500/редиректе) —
+      // читаем как текст и аккуратно пробуем распарсить.
+      const raw = await res.text();
+      let data: { url?: string; error?: string } = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        data = {};
+      }
+
+      if (!res.ok) {
+        throw new Error(data.error ?? `Ошибка загрузки (${res.status})`);
+      }
+      if (!data.url) {
+        throw new Error("Сервер вернул пустой ответ");
+      }
       setUrl(data.url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка загрузки");
