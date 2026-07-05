@@ -20,7 +20,7 @@ enum FriendshipStatus {
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
-  passwordHash String
+  passwordHash String? // null у пользователей, вошедших через OAuth
   username     String   @unique
   displayName  String
   avatarUrl    String?
@@ -29,6 +29,7 @@ model User {
   status       String? // короткий статус под именем
   location     String? // город
   website      String? // ссылка на сайт/соцсеть
+  isPrivate    Boolean  @default(false) // закрытый профиль
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

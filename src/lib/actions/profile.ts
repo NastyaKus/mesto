@@ -29,6 +29,8 @@ export async function updateProfile(
 
   const { displayName, status, bio, location, website, avatarUrl, coverUrl } =
     parsed.data;
+  // Чекбокс: приходит "on" когда включён, иначе отсутствует.
+  const isPrivate = formData.get("isPrivate") === "on";
   const user = await prisma.user.update({
     where: { id: session.user.id },
     data: {
@@ -39,6 +41,7 @@ export async function updateProfile(
       website: website || null,
       avatarUrl: avatarUrl || null,
       coverUrl: coverUrl || null,
+      isPrivate,
     },
     select: { username: true },
   });

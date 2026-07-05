@@ -15,6 +15,7 @@ type Props = {
   website?: string | null;
   avatarUrl?: string | null;
   coverUrl?: string | null;
+  isPrivate?: boolean;
 };
 
 const initialState: ActionState = {};
@@ -39,6 +40,7 @@ export function SettingsForm({
   website,
   avatarUrl,
   coverUrl,
+  isPrivate,
 }: Props) {
   const [state, formAction] = useActionState(updateProfile, initialState);
   const saved = state.error === undefined && Object.keys(state).length > 0;
@@ -99,6 +101,21 @@ export function SettingsForm({
         <ImagePicker name="coverUrl" defaultValue={coverUrl} />
         <Errors list={state.fieldErrors?.coverUrl} />
       </div>
+
+      <label className="mb-4 flex items-center gap-2">
+        <input
+          type="checkbox"
+          name="isPrivate"
+          defaultChecked={isPrivate}
+          className="h-4 w-4 accent-[var(--brand)]"
+        />
+        <span className="text-sm">
+          Закрытый профиль{" "}
+          <span className="text-muted">
+            — стену и друзей видят только друзья
+          </span>
+        </span>
+      </label>
 
       {saved && <p className="mb-3 text-sm text-green-600">Сохранено ✓</p>}
       <SubmitButton>Сохранить</SubmitButton>

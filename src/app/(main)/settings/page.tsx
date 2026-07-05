@@ -15,6 +15,7 @@ export default async function SettingsPage() {
         website={me.website}
         avatarUrl={me.avatarUrl}
         coverUrl={me.coverUrl}
+        isPrivate={me.isPrivate}
       />
     </div>
   );

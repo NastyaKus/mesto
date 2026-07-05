@@ -37,6 +37,9 @@ export default async function ProfilePage({
   ]);
 
   const isSelf = state === "SELF";
+  // Закрытый профиль: не-друзьям прячем стену и список друзей.
+  const restricted =
+    profile.isPrivate && state !== "SELF" && state !== "FRIENDS";
   const joined = new Date(profile.createdAt).toLocaleDateString("ru-RU", {
     month: "long",
     year: "numeric",
@@ -118,8 +121,20 @@ export default async function ProfilePage({
         </div>
       </section>
 
+      {/* Закрытый профиль — стоп-экран для не-друзей */}
+      {restricted && (
+        <section className="card p-8 text-center">
+          <p className="text-3xl">🔒</p>
+          <p className="mt-2 font-medium">Это закрытый профиль</p>
+          <p className="mt-1 text-sm text-muted">
+            Записи и друзья видны только друзьям. Добавьтесь в друзья, чтобы
+            видеть больше.
+          </p>
+        </section>
+      )}
+
       {/* Друзья (компактная сетка аватаров) */}
-      {friends.length > 0 && (
+      {!restricted && friends.length > 0 && (
         <section className="card animate-fade-up p-4">
           <h2 className="mb-3 text-sm font-semibold text-muted">
             Друзья · {friendsCount}
@@ -140,20 +155,22 @@ export default async function ProfilePage({
       )}
 
       {/* Стена */}
-      <section>
-        {isSelf && <PostComposer user={me} />}
-        {posts.length === 0 ? (
-          <div className="card p-6 text-center text-sm text-muted">
-            {isSelf ? "У вас пока нет записей." : "Пока нет записей."}
-          </div>
-        ) : (
-          <div className="stagger flex flex-col gap-4">
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} meId={me.id} />
-            ))}
-          </div>
-        )}
-      </section>
+      {!restricted && (
+        <section>
+          {isSelf && <PostComposer user={me} />}
+          {posts.length === 0 ? (
+            <div className="card p-6 text-center text-sm text-muted">
+              {isSelf ? "У вас пока нет записей." : "Пока нет записей."}
+            </div>
+          ) : (
+            <div className="stagger flex flex-col gap-4">
+              {posts.map((post) => (
+                <PostCard key={post.id} post={post} meId={me.id} />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }

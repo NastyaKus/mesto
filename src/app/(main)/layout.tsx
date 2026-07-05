@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/session";
 import { getIncomingRequests, getFriendSuggestions } from "@/lib/friends";
@@ -8,6 +9,7 @@ import { Sidebar } from "@/components/sidebar";
 import { BottomNav } from "@/components/bottom-nav";
 import { RightRail } from "@/components/right-rail";
 import { SearchBar } from "@/components/search-bar";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Avatar } from "@/components/ui/avatar";
 import type { NavItem } from "@/components/nav-links";
 
@@ -18,6 +20,9 @@ export default async function MainLayout({
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+
+  const theme =
+    (await cookies()).get("theme")?.value === "dark" ? "dark" : "light";
 
   const [incoming, unreadMessages, unreadNotifications, suggestions] =
     await Promise.all([
@@ -52,6 +57,7 @@ export default async function MainLayout({
             mesto
           </Link>
           <SearchBar />
+          <ThemeToggle initial={theme} />
           {/* Аватар-ссылка на профиль — виден на мобильных вместо сайдбара */}
           <Link href={`/profile/${user.username}`} className="shrink-0 md:hidden">
             <Avatar src={user.avatarUrl} name={user.displayName} size={32} />

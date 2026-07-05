@@ -13,6 +13,17 @@
   --like: #f43f5e;
 }
 
+/* Тёмная тема — переопределяем те же переменные, бренд оставляем. */
+[data-theme="dark"] {
+  --background: #0f1015;
+  --surface: #191a20;
+  --surface-2: #23242d;
+  --foreground: #e9e9f0;
+  --muted: #9598a8;
+  --border: #2a2c37;
+  color-scheme: dark;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
