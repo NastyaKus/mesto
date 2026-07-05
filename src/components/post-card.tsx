@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { Avatar } from "@/components/ui/avatar";
 import { Lightbox } from "@/components/ui/lightbox";
+import { PostContent } from "@/components/post-content";
 import { PostInteractions } from "@/components/post-interactions";
 import { DeletePostButton } from "@/components/delete-post-button";
 import { timeAgo } from "@/lib/format";
 import type { FeedPost } from "@/lib/posts";
 
-export function PostCard({ post }: { post: FeedPost }) {
+export function PostCard({ post, meId }: { post: FeedPost; meId: string }) {
   return (
     <article className="card p-4">
       <header className="flex items-center gap-3">
@@ -56,7 +57,12 @@ export function PostCard({ post }: { post: FeedPost }) {
         {post.isMine && <DeletePostButton postId={post.id} />}
       </header>
 
-      <p className="mt-3 whitespace-pre-wrap break-words">{post.content}</p>
+      <PostContent
+        postId={post.id}
+        content={post.content}
+        editedAt={post.editedAt}
+        isMine={post.isMine}
+      />
 
       {post.imageUrl && (
         <Lightbox
@@ -67,9 +73,10 @@ export function PostCard({ post }: { post: FeedPost }) {
 
       <PostInteractions
         postId={post.id}
-        likedByMe={post.likedByMe}
-        likeCount={post.likeCount}
+        reactions={post.reactions}
+        myReaction={post.myReaction}
         comments={post.comments}
+        meId={meId}
       />
     </article>
   );

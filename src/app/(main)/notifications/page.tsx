@@ -11,6 +11,8 @@ const TEXT: Record<NotificationType, string> = {
   FRIEND_ACCEPT: "принял(а) вашу заявку в друзья",
   POST_LIKE: "оценил(а) вашу запись",
   POST_COMMENT: "прокомментировал(а) вашу запись",
+  COMMENT_REPLY: "ответил(а) на ваш комментарий",
+  MENTION: "упомянул(а) вас",
 };
 
 const ICON: Record<NotificationType, string> = {
@@ -18,10 +20,19 @@ const ICON: Record<NotificationType, string> = {
   FRIEND_ACCEPT: "🤝",
   POST_LIKE: "❤️",
   POST_COMMENT: "💬",
+  COMMENT_REPLY: "↩️",
+  MENTION: "📣",
 };
 
+const POST_TYPES: NotificationType[] = [
+  "POST_LIKE",
+  "POST_COMMENT",
+  "COMMENT_REPLY",
+  "MENTION",
+];
+
 function linkFor(type: NotificationType, username: string): string {
-  if (type === "POST_LIKE" || type === "POST_COMMENT") return "/feed";
+  if (POST_TYPES.includes(type)) return "/feed";
   return `/profile/${username}`;
 }
 

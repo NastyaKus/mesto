@@ -1,36 +1,41 @@
 import { prisma } from "@/lib/prisma";
 import { getUserGroupIds } from "@/lib/groups";
 
-// Форма поста для UI (с автором, счётчиками и флагом «лайкнул ли я»).
+type PublicAuthor = {
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+};
+
+export type FeedComment = {
+  id: string;
+  authorId: string;
+  parentId: string | null;
+  content: string;
+  editedAt: Date | null;
+  createdAt: Date;
+  author: PublicAuthor;
+};
+
+// Форма поста для UI (с автором, реакциями и комментариями).
 export type FeedPost = {
   id: string;
   content: string;
   imageUrl: string | null;
+  editedAt: Date | null;
   createdAt: Date;
   isMine: boolean;
-  likedByMe: boolean;
-  likeCount: number;
-  author: {
-    username: string;
-    displayName: string;
-    avatarUrl: string | null;
-  };
+  // Реакции, сгруппированные по эмодзи, и моя реакция (если есть).
+  reactions: { emoji: string; count: number }[];
+  myReaction: string | null;
+  author: PublicAuthor;
   // Если пост опубликован от лица сообщества — оно тут.
   group: {
     slug: string;
     name: string;
     avatarUrl: string | null;
   } | null;
-  comments: {
-    id: string;
-    content: string;
-    createdAt: Date;
-    author: {
-      username: string;
-      displayName: string;
-      avatarUrl: string | null;
-    };
-  }[];
+  comments: FeedComment[];
 };
 
 const authorSelect = {
@@ -45,8 +50,8 @@ const groupSelect = {
   avatarUrl: true,
 } as const;
 
-// Как загружаем пост со связями. viewerId нужен, чтобы понять «мой ли лайк».
-function postArgs(viewerId: string) {
+// Как загружаем пост со связями.
+function postArgs() {
   return {
     include: {
       author: { select: authorSelect },
@@ -55,8 +60,8 @@ function postArgs(viewerId: string) {
         include: { author: { select: authorSelect } },
         orderBy: { createdAt: "asc" as const },
       },
-      likes: { where: { userId: viewerId }, select: { id: true } },
-      _count: { select: { likes: true } },
+      // Все реакции — группируем и считаем в shape().
+      likes: { select: { emoji: true, userId: true } },
     },
     orderBy: { createdAt: "desc" as const },
   };
@@ -67,24 +72,33 @@ function shape(
     id: string;
     content: string;
     imageUrl: string | null;
+    editedAt: Date | null;
     createdAt: Date;
     authorId: string;
-    author: { username: string; displayName: string; avatarUrl: string | null };
+    author: PublicAuthor;
     group: { slug: string; name: string; avatarUrl: string | null } | null;
-    comments: FeedPost["comments"];
-    likes: { id: string }[];
-    _count: { likes: number };
+    comments: FeedComment[];
+    likes: { emoji: string; userId: string }[];
   },
   viewerId: string,
 ): FeedPost {
+  // Группируем реакции по эмодзи.
+  const counts = new Map<string, number>();
+  for (const l of post.likes) counts.set(l.emoji, (counts.get(l.emoji) ?? 0) + 1);
+  const reactions = [...counts.entries()]
+    .map(([emoji, count]) => ({ emoji, count }))
+    .sort((a, b) => b.count - a.count);
+  const myReaction = post.likes.find((l) => l.userId === viewerId)?.emoji ?? null;
+
   return {
     id: post.id,
     content: post.content,
     imageUrl: post.imageUrl,
+    editedAt: post.editedAt,
     createdAt: post.createdAt,
     isMine: post.authorId === viewerId,
-    likedByMe: post.likes.length > 0,
-    likeCount: post._count.likes,
+    reactions,
+    myReaction,
     author: post.author,
     group: post.group,
     comments: post.comments,
@@ -120,7 +134,7 @@ export async function getFeedPosts(viewerId: string): Promise<FeedPost[]> {
         { groupId: { in: groupIds } },
       ],
     },
-    ...postArgs(viewerId),
+    ...postArgs(),
     take: 50,
   });
   return posts.map((p) => shape(p, viewerId));
@@ -133,7 +147,7 @@ export async function getUserPosts(
 ): Promise<FeedPost[]> {
   const posts = await prisma.post.findMany({
     where: { authorId, groupId: null },
-    ...postArgs(viewerId),
+    ...postArgs(),
     take: 50,
   });
   return posts.map((p) => shape(p, viewerId));
@@ -146,7 +160,7 @@ export async function getGroupPosts(
 ): Promise<FeedPost[]> {
   const posts = await prisma.post.findMany({
     where: { groupId },
-    ...postArgs(viewerId),
+    ...postArgs(),
     take: 50,
   });
   return posts.map((p) => shape(p, viewerId));

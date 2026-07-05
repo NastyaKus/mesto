@@ -149,7 +149,7 @@ export default async function ProfilePage({
         ) : (
           <div className="stagger flex flex-col gap-4">
             {posts.map((post) => (
-              <PostCard key={post.id} post={post} />
+              <PostCard key={post.id} post={post} meId={me.id} />
             ))}
           </div>
         )}

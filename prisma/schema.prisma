@@ -55,12 +55,13 @@ model User {
 }
 
 model Post {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   authorId  String
   groupId   String? // если задан — пост опубликован от лица сообщества
   content   String
   imageUrl  String?
-  createdAt DateTime @default(now())
+  editedAt  DateTime? // проставляется при редактировании
+  createdAt DateTime  @default(now())
 
   author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
   group    Group?    @relation(fields: [groupId], references: [id], onDelete: Cascade)
@@ -75,25 +76,30 @@ model Like {
   id        String   @id @default(cuid())
   postId    String
   userId    String
+  emoji     String   @default("👍") // тип реакции
   createdAt DateTime @default(now())
 
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Один пользователь — один лайк на пост
+  // Один пользователь — одна реакция на пост
   @@unique([postId, userId])
   @@index([postId])
 }
 
 model Comment {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   postId    String
   authorId  String
+  parentId  String? // ответ на другой комментарий
   content   String
-  createdAt DateTime @default(now())
+  editedAt  DateTime?
+  createdAt DateTime  @default(now())
 
-  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author  User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
 
   @@index([postId, createdAt])
 }
@@ -189,6 +195,8 @@ enum NotificationType {
   FRIEND_ACCEPT
   POST_LIKE
   POST_COMMENT
+  COMMENT_REPLY
+  MENTION
 }
 
 model Notification {

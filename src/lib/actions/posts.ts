@@ -5,12 +5,43 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { createNotification } from "@/lib/notifications";
+import { extractMentions } from "@/lib/mentions";
 
 async function requireUserId(): Promise<string> {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Не авторизован");
   return session.user.id;
 }
+
+// Обновляем все места, где показываются посты.
+function revalidatePosts() {
+  revalidatePath("/feed");
+  revalidatePath("/profile", "layout");
+  revalidatePath("/groups", "layout");
+}
+
+// Шлём уведомления всем упомянутым через @username.
+async function notifyMentions(text: string, actorId: string, entityId: string) {
+  const usernames = extractMentions(text);
+  if (usernames.length === 0) return;
+  const users = await prisma.user.findMany({
+    where: { username: { in: usernames } },
+    select: { id: true },
+  });
+  await Promise.all(
+    users.map((u) =>
+      createNotification({
+        userId: u.id,
+        actorId,
+        type: "MENTION",
+        entityId,
+      }),
+    ),
+  );
+}
+
+// Разрешённые эмодзи-реакции.
+const REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🔥"];
 
 const postSchema = z.object({
   content: z.string().trim().min(1, "Напишите что-нибудь").max(2000),
@@ -57,41 +88,63 @@ export async function createPost(
     groupId = parsed.data.groupId;
   }
 
-  await prisma.post.create({
+  const post = await prisma.post.create({
     data: {
       authorId: userId,
       groupId,
       content: parsed.data.content,
       imageUrl: parsed.data.imageUrl || null,
     },
+    select: { id: true },
   });
 
-  revalidatePath("/feed");
-  revalidatePath("/profile", "layout");
-  if (groupId) revalidatePath("/groups", "layout");
+  await notifyMentions(parsed.data.content, userId, post.id);
+
+  revalidatePosts();
   return {};
+}
+
+/** Редактировать свой пост. */
+export async function editPost(postId: string, content: string) {
+  const userId = await requireUserId();
+  const text = content.trim();
+  if (!text) return;
+  await prisma.post.updateMany({
+    where: { id: postId, authorId: userId },
+    data: { content: text.slice(0, 2000), editedAt: new Date() },
+  });
+  revalidatePosts();
 }
 
 /** Удалить свой пост. */
 export async function deletePost(postId: string) {
   const userId = await requireUserId();
   await prisma.post.deleteMany({ where: { id: postId, authorId: userId } });
-  revalidatePath("/feed");
-  revalidatePath("/profile", "layout");
+  revalidatePosts();
 }
 
-/** Поставить/снять лайк. */
-export async function toggleLike(postId: string) {
+/** Поставить/сменить/снять эмодзи-реакцию. */
+export async function setReaction(postId: string, emoji: string) {
   const userId = await requireUserId();
+  if (!REACTIONS.includes(emoji)) return;
+
   const existing = await prisma.like.findUnique({
     where: { postId_userId: { postId, userId } },
   });
 
   if (existing) {
-    await prisma.like.delete({ where: { id: existing.id } });
+    if (existing.emoji === emoji) {
+      // Повторный клик по той же реакции — снимаем.
+      await prisma.like.delete({ where: { id: existing.id } });
+    } else {
+      await prisma.like.update({
+        where: { id: existing.id },
+        data: { emoji },
+      });
+    }
   } else {
-    await prisma.like.create({ data: { postId, userId } });
-    // Уведомляем автора поста только при постановке лайка.
+    await prisma.like.create({ data: { postId, userId, emoji } });
+    // Уведомляем автора только при первой реакции.
     const post = await prisma.post.findUnique({
       where: { id: postId },
       select: { authorId: true },
@@ -106,28 +159,68 @@ export async function toggleLike(postId: string) {
     }
   }
 
-  revalidatePath("/feed");
-  revalidatePath("/profile", "layout");
+  revalidatePosts();
 }
 
-/** Добавить комментарий. */
-export async function addComment(postId: string, content: string) {
+/** Добавить комментарий (или ответ на другой комментарий). */
+export async function addComment(
+  postId: string,
+  content: string,
+  parentId?: string,
+) {
   const userId = await requireUserId();
   const text = content.trim();
   if (!text) return;
 
   const comment = await prisma.comment.create({
-    data: { postId, authorId: userId, content: text.slice(0, 1000) },
-    include: { post: { select: { authorId: true } } },
+    data: {
+      postId,
+      authorId: userId,
+      content: text.slice(0, 1000),
+      parentId: parentId ?? null,
+    },
+    include: {
+      post: { select: { authorId: true } },
+      parent: { select: { authorId: true } },
+    },
   });
 
+  // Уведомляем автора поста.
   await createNotification({
     userId: comment.post.authorId,
     actorId: userId,
     type: "POST_COMMENT",
     entityId: postId,
   });
+  // Если это ответ — уведомляем автора родительского комментария.
+  if (comment.parent) {
+    await createNotification({
+      userId: comment.parent.authorId,
+      actorId: userId,
+      type: "COMMENT_REPLY",
+      entityId: postId,
+    });
+  }
+  await notifyMentions(text, userId, postId);
 
-  revalidatePath("/feed");
-  revalidatePath("/profile", "layout");
+  revalidatePosts();
+}
+
+/** Редактировать свой комментарий. */
+export async function editComment(commentId: string, content: string) {
+  const userId = await requireUserId();
+  const text = content.trim();
+  if (!text) return;
+  await prisma.comment.updateMany({
+    where: { id: commentId, authorId: userId },
+    data: { content: text.slice(0, 1000), editedAt: new Date() },
+  });
+  revalidatePosts();
+}
+
+/** Удалить свой комментарий. */
+export async function deleteComment(commentId: string) {
+  const userId = await requireUserId();
+  await prisma.comment.deleteMany({ where: { id: commentId, authorId: userId } });
+  revalidatePosts();
 }
