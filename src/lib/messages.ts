@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { publicUserSelect } from "@/lib/friends";
+import { sendPushToUser } from "@/lib/push";
 
 // «В сети» — активность за последние 2 минуты; «печатает» — сигнал за 5 секунд.
 const ONLINE_WINDOW_MS = 2 * 60 * 1000;
@@ -259,6 +260,75 @@ export function shapeMessage(m: RawMessage, viewerId: string): ChatMessage {
     myReaction: deleted ? null : myReaction,
     replyTo,
   };
+}
+
+/**
+ * Создаёт сообщение в беседе (общее ядро для веб-action и мобильного API):
+ * проверка доступа, валидация ответа-цитаты, транзакция, пуши остальным.
+ * Возвращает созданное сообщение или null (нет доступа / пустое).
+ */
+export async function createMessage(
+  userId: string,
+  conversationId: string,
+  content: string,
+  imageUrl?: string | null,
+  replyToId?: string | null,
+) {
+  const text = content.trim();
+  const image = imageUrl?.trim() || null;
+  if (!text && !image) return null;
+
+  const access = await getConversationAccess(conversationId, userId);
+  if (!access) return null;
+
+  // Цитировать можно только сообщение из этой же беседы.
+  let validReplyTo: string | null = null;
+  if (replyToId) {
+    const r = await prisma.message.findUnique({
+      where: { id: replyToId },
+      select: { conversationId: true },
+    });
+    if (r?.conversationId === conversationId) validReplyTo = replyToId;
+  }
+
+  const now = new Date();
+  const [message] = await prisma.$transaction([
+    prisma.message.create({
+      data: {
+        conversationId,
+        senderId: userId,
+        content: text.slice(0, 2000),
+        imageUrl: image,
+        replyToId: validReplyTo,
+      },
+    }),
+    prisma.conversation.update({
+      where: { id: conversationId },
+      data: { lastMessageAt: now },
+    }),
+    prisma.conversationParticipant.updateMany({
+      where: { conversationId, userId },
+      data: { lastReadAt: now },
+    }),
+  ]);
+
+  // Веб-пуш остальным участникам (best-effort).
+  const senderName = access.me.user.displayName;
+  const groupTitle = access.convo.isGroup ? access.convo.title : null;
+  const title = groupTitle ? `${senderName} · ${groupTitle}` : senderName;
+  const body = text ? text.slice(0, 140) : "📷 Фото";
+  await Promise.all(
+    access.others.map((p) =>
+      sendPushToUser(p.userId, {
+        title,
+        body,
+        url: `/messages/${conversationId}`,
+        tag: `conv-${conversationId}`,
+      }),
+    ),
+  );
+
+  return message;
 }
 
 /** Помечает беседу прочитанной для пользователя (двигает lastReadAt). */

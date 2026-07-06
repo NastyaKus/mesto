@@ -9,8 +9,8 @@ import {
   getOrCreateConversation,
   getConversationAccess,
   createGroupConversation,
+  createMessage,
 } from "@/lib/messages";
-import { sendPushToUser } from "@/lib/push";
 
 async function requireUserId(): Promise<string> {
   const session = await auth();
@@ -68,63 +68,10 @@ export async function sendMessage(
   replyToId?: string,
 ) {
   const userId = await requireUserId();
-  const text = content.trim();
-  const image = imageUrl?.trim() || null;
-  if (!text && !image) return;
-
-  const access = await getConversationAccess(conversationId, userId);
-  if (!access) throw new Error("Нет доступа к диалогу");
-
-  // Цитировать можно только сообщение из этой же беседы.
-  let validReplyTo: string | null = null;
-  if (replyToId) {
-    const r = await prisma.message.findUnique({
-      where: { id: replyToId },
-      select: { conversationId: true },
-    });
-    if (r?.conversationId === conversationId) validReplyTo = replyToId;
-  }
-
-  const now = new Date();
-  await prisma.$transaction([
-    prisma.message.create({
-      data: {
-        conversationId,
-        senderId: userId,
-        content: text.slice(0, 2000),
-        imageUrl: image,
-        replyToId: validReplyTo,
-      },
-    }),
-    prisma.conversation.update({
-      where: { id: conversationId },
-      data: { lastMessageAt: now },
-    }),
-    // Своё сообщение считаем прочитанным сразу.
-    prisma.conversationParticipant.updateMany({
-      where: { conversationId, userId },
-      data: { lastReadAt: now },
-    }),
-  ]);
-
+  // Общее ядро: доступ, валидация, транзакция, пуши.
+  await createMessage(userId, conversationId, content, imageUrl, replyToId);
   revalidatePath(`/messages/${conversationId}`);
   revalidatePath("/messages");
-
-  // Веб-пуш остальным участникам (best-effort).
-  const senderName = access.me.user.displayName;
-  const groupTitle = access.convo.isGroup ? access.convo.title : null;
-  const title = groupTitle ? `${senderName} · ${groupTitle}` : senderName;
-  const body = text ? text.slice(0, 140) : "📷 Фото";
-  await Promise.all(
-    access.others.map((p) =>
-      sendPushToUser(p.userId, {
-        title,
-        body,
-        url: `/messages/${conversationId}`,
-        tag: `conv-${conversationId}`,
-      }),
-    ),
-  );
 }
 
 /** Поставить/снять/сменить реакцию на сообщение (одна реакция на пользователя). */

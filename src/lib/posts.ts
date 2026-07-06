@@ -1,5 +1,79 @@
 import { prisma } from "@/lib/prisma";
 import { getUserGroupIds } from "@/lib/groups";
+import { extractMentions } from "@/lib/mentions";
+import { createNotification } from "@/lib/notifications";
+
+// Разрешённые эмодзи-реакции (совпадает с web-action).
+const REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🔥"];
+
+/** Создаёт личный пост пользователя и шлёт уведомления упомянутым. Возвращает id. */
+export async function createUserPost(
+  userId: string,
+  content: string,
+  imageUrl?: string | null,
+): Promise<string | null> {
+  const text = content.trim();
+  if (!text) return null;
+  const post = await prisma.post.create({
+    data: {
+      authorId: userId,
+      content: text.slice(0, 2000),
+      imageUrl: imageUrl?.trim() || null,
+    },
+    select: { id: true },
+  });
+  const usernames = extractMentions(text);
+  if (usernames.length > 0) {
+    const users = await prisma.user.findMany({
+      where: { username: { in: usernames } },
+      select: { id: true },
+    });
+    await Promise.all(
+      users.map((u) =>
+        createNotification({
+          userId: u.id,
+          actorId: userId,
+          type: "MENTION",
+          entityId: post.id,
+        }),
+      ),
+    );
+  }
+  return post.id;
+}
+
+/** Поставить/сменить/снять реакцию на пост (общее ядро для web-action и API). */
+export async function setPostReaction(
+  userId: string,
+  postId: string,
+  emoji: string,
+) {
+  if (!REACTIONS.includes(emoji)) return;
+  const existing = await prisma.like.findUnique({
+    where: { postId_userId: { postId, userId } },
+  });
+  if (existing) {
+    if (existing.emoji === emoji) {
+      await prisma.like.delete({ where: { id: existing.id } });
+    } else {
+      await prisma.like.update({ where: { id: existing.id }, data: { emoji } });
+    }
+  } else {
+    await prisma.like.create({ data: { postId, userId, emoji } });
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { authorId: true },
+    });
+    if (post) {
+      await createNotification({
+        userId: post.authorId,
+        actorId: userId,
+        type: "POST_LIKE",
+        entityId: postId,
+      });
+    }
+  }
+}
 
 type PublicAuthor = {
   username: string;
