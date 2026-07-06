@@ -3,10 +3,12 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Avatar } from "@/components/ui/avatar";
+import { ImagePicker } from "@/components/ui/image-picker";
 import {
   renameConversation,
   addParticipants,
   leaveConversation,
+  setGroupAvatar,
 } from "@/lib/actions/messages";
 
 type Member = {
@@ -27,12 +29,14 @@ type Friend = {
 export function GroupManage({
   conversationId,
   title,
+  avatarUrl,
   isOwner,
   members,
   addable,
 }: {
   conversationId: string;
   title: string;
+  avatarUrl: string | null;
   isOwner: boolean;
   members: Member[];
   addable: Friend[];
@@ -78,6 +82,30 @@ export function GroupManage({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Аватар беседы (правит владелец) */}
+      {isOwner && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const url = new FormData(e.currentTarget).get("avatarUrl") as string;
+            startTransition(() => setGroupAvatar(conversationId, url ?? ""));
+          }}
+          className="card p-4"
+        >
+          <span className="mb-1 block text-sm font-medium text-muted">
+            Аватар беседы
+          </span>
+          <ImagePicker name="avatarUrl" defaultValue={avatarUrl} />
+          <button
+            type="submit"
+            disabled={pending}
+            className="btn-primary mt-3 px-4 py-2 text-sm"
+          >
+            Сохранить аватар
+          </button>
+        </form>
       )}
 
       {/* Участники */}

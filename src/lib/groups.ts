@@ -59,6 +59,24 @@ export async function getMembership(
   return m?.role ?? null;
 }
 
+/** Сообщества пользователя (для вкладки в профиле) с ролью и числом участников. */
+export async function getUserGroups(userId: string) {
+  const memberships = await prisma.groupMembership.findMany({
+    where: { userId },
+    orderBy: { joinedAt: "desc" },
+    include: {
+      group: {
+        select: { ...publicGroupSelect, _count: { select: { members: true } } },
+      },
+    },
+  });
+  return memberships.map((m) => ({
+    ...m.group,
+    memberCount: m.group._count.members,
+    role: m.role,
+  }));
+}
+
 /** ID сообществ, в которых состоит пользователь (для ленты). */
 export async function getUserGroupIds(userId: string): Promise<string[]> {
   const memberships = await prisma.groupMembership.findMany({

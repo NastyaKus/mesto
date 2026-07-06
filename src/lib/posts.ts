@@ -225,6 +225,18 @@ export async function searchPosts(
   return posts.map((p) => shape(p, viewerId));
 }
 
+/** Один пост по id (для пермалинка и закреплённого поста профиля). */
+export async function getPostById(
+  id: string,
+  viewerId: string,
+): Promise<FeedPost | null> {
+  const post = await prisma.post.findUnique({
+    where: { id },
+    include: postArgs(viewerId).include,
+  });
+  return post ? shape(post as RawPost, viewerId) : null;
+}
+
 /** Сохранённые пользователем посты (закладки). */
 export async function getBookmarkedPosts(viewerId: string): Promise<FeedPost[]> {
   const bookmarks = await prisma.bookmark.findMany({

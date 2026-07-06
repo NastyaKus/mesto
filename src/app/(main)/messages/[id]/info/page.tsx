@@ -50,6 +50,7 @@ export default async function GroupInfoPage({
       <GroupManage
         conversationId={id}
         title={access.convo.title ?? ""}
+        avatarUrl={access.convo.avatarUrl}
         isOwner={ownerId === me.id}
         members={members}
         addable={addable}

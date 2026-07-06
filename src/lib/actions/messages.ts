@@ -27,7 +27,11 @@ export async function startConversation(otherId: string) {
 }
 
 /** Создать групповую беседу с выбранными друзьями и перейти в неё. */
-export async function createGroupChat(title: string, memberIds: string[]) {
+export async function createGroupChat(
+  title: string,
+  memberIds: string[],
+  avatarUrl?: string,
+) {
   const userId = await requireUserId();
   const clean = title.trim();
   if (!clean) return;
@@ -38,8 +42,22 @@ export async function createGroupChat(title: string, memberIds: string[]) {
   const members = memberIds.filter((id) => friendIds.has(id));
   if (members.length === 0) return;
 
-  const id = await createGroupConversation(userId, clean, members);
+  const id = await createGroupConversation(userId, clean, members, avatarUrl);
   redirect(`/messages/${id}`);
+}
+
+/** Задать аватар групповой беседы (только владелец). */
+export async function setGroupAvatar(conversationId: string, avatarUrl: string) {
+  const userId = await requireUserId();
+  const access = await getConversationAccess(conversationId, userId);
+  if (!access || !access.convo.isGroup || access.convo.ownerId !== userId) return;
+
+  await prisma.conversation.update({
+    where: { id: conversationId },
+    data: { avatarUrl: avatarUrl.trim() || null },
+  });
+  revalidatePath(`/messages/${conversationId}`);
+  revalidatePath("/messages");
 }
 
 /** Отправить сообщение в беседу (текст и/или картинка, опционально ответ-цитата). */

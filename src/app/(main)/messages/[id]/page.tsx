@@ -44,6 +44,7 @@ export default async function ConversationPage({
       meId={me.id}
       isGroup={access.convo.isGroup}
       title={title}
+      groupAvatar={access.convo.avatarUrl}
       headerUser={headerUser}
       initialMessages={raw.map((m) => shapeMessage(m, me.id))}
       initialParticipants={participants}

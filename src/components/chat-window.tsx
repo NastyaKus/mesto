@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Avatar } from "@/components/ui/avatar";
 import { Lightbox } from "@/components/ui/lightbox";
+import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { presenceLabel } from "@/lib/format";
 import type { ChatMessage, ParticipantState } from "@/lib/messages";
 import {
@@ -30,6 +31,7 @@ type Props = {
   meId: string;
   isGroup: boolean;
   title: string;
+  groupAvatar: string | null;
   headerUser: HeaderUser | null;
   initialMessages: ChatMessage[];
   initialParticipants: ParticipantState[];
@@ -40,6 +42,7 @@ export function ChatWindow({
   meId,
   isGroup,
   title,
+  groupAvatar,
   headerUser,
   initialMessages,
   initialParticipants,
@@ -198,9 +201,7 @@ export function ChatWindow({
       {/* Шапка беседы */}
       <div className="flex items-center gap-3 border-b border-border p-3">
         {isGroup ? (
-          <div className="bg-brand-gradient flex h-10 w-10 items-center justify-center rounded-full text-lg text-white">
-            {title.slice(0, 1).toUpperCase()}
-          </div>
+          <Avatar src={groupAvatar} name={title} size={40} />
         ) : (
           headerUser && (
             <Avatar
@@ -351,6 +352,7 @@ export function ChatWindow({
           >
             {uploading ? <span className="spinner" /> : "📎"}
           </button>
+          <EmojiPicker onPick={(e) => setText((t) => t + e)} />
           <input
             value={text}
             onChange={(e) => {

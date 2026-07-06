@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Avatar } from "@/components/ui/avatar";
+import { ImagePicker } from "@/components/ui/image-picker";
 import { createGroupChat } from "@/lib/actions/messages";
 
 type Friend = {
@@ -28,10 +29,11 @@ export function NewGroupForm({ friends }: { friends: Friend[] }) {
 
   const canSubmit = title.trim().length > 0 && selected.size > 0 && !pending;
 
-  const submit = (e: React.FormEvent) => {
+  const submit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!canSubmit) return;
-    startTransition(() => createGroupChat(title.trim(), [...selected]));
+    const avatarUrl = (new FormData(e.currentTarget).get("avatarUrl") as string) || undefined;
+    startTransition(() => createGroupChat(title.trim(), [...selected], avatarUrl));
   };
 
   if (friends.length === 0) {
@@ -57,6 +59,13 @@ export function NewGroupForm({ friends }: { friends: Friend[] }) {
           autoFocus
         />
       </label>
+
+      <div className="mb-4">
+        <span className="mb-1 block text-sm font-medium text-muted">
+          Аватар беседы (необязательно)
+        </span>
+        <ImagePicker name="avatarUrl" />
+      </div>
 
       <div className="mb-4">
         <span className="mb-2 block text-sm font-medium text-muted">
