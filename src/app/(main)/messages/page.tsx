@@ -10,13 +10,19 @@ export default async function MessagesPage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-lg font-semibold">Сообщения</h1>
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-lg font-semibold">Сообщения</h1>
+        <Link href="/messages/new" className="btn-primary px-4 py-1.5 text-sm">
+          Новая беседа
+        </Link>
+      </div>
+
       {conversations.length === 0 ? (
         <div className="card p-8 text-center">
           <p className="text-3xl">✉️</p>
           <p className="mt-2 font-medium">Пока нет диалогов</p>
           <p className="mt-1 text-sm text-muted">
-            Откройте профиль друга и нажмите «Написать сообщение».
+            Откройте профиль друга и нажмите «Написать», или создайте беседу.
           </p>
         </div>
       ) : (
@@ -28,14 +34,16 @@ export default async function MessagesPage() {
               className="card flex items-center gap-3 p-3 transition-transform hover:-translate-y-0.5"
             >
               <Avatar
-                src={c.other.avatarUrl}
-                name={c.other.displayName}
+                src={c.avatarUrl}
+                name={c.title}
                 size={48}
+                online={c.isGroup ? undefined : c.online}
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="truncate font-medium">
-                    {c.other.displayName}
+                  <span className="flex min-w-0 items-center gap-1.5 font-medium">
+                    {c.isGroup && <span className="shrink-0 text-muted">👥</span>}
+                    <span className="truncate">{c.title}</span>
                   </span>
                   {c.lastMessage && (
                     <span className="shrink-0 text-xs text-muted">
@@ -48,7 +56,9 @@ export default async function MessagesPage() {
                     {c.lastMessage
                       ? (c.lastMessage.senderId === me.id ? "Вы: " : "") +
                         (c.lastMessage.content || "📷 Фото")
-                      : "Нет сообщений"}
+                      : c.isGroup
+                        ? `${c.participantCount} участников`
+                        : "Нет сообщений"}
                   </span>
                   {c.unread > 0 && (
                     <span className="bg-brand-gradient min-w-5 shrink-0 rounded-full px-2 py-0.5 text-center text-xs font-semibold text-white">

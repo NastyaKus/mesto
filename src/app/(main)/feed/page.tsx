@@ -1,14 +1,23 @@
 import { getCurrentUser } from "@/lib/session";
 import { getFeedPosts } from "@/lib/posts";
+import { getActiveStoriesFeed } from "@/lib/stories";
 import { PostComposer } from "@/components/post-composer";
 import { PostCard } from "@/components/post-card";
+import { StoriesBar } from "@/components/stories-bar";
 
 export default async function FeedPage() {
   const me = (await getCurrentUser())!;
-  const posts = await getFeedPosts(me.id);
+  const [posts, storyGroups] = await Promise.all([
+    getFeedPosts(me.id),
+    getActiveStoriesFeed(me.id),
+  ]);
 
   return (
     <div>
+      <StoriesBar
+        groups={storyGroups}
+        me={{ displayName: me.displayName, avatarUrl: me.avatarUrl }}
+      />
       <PostComposer user={me} />
 
       {posts.length === 0 ? (

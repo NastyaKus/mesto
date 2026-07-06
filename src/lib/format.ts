@@ -17,6 +17,16 @@ export function timeAgo(date: Date | string): string {
   });
 }
 
+// Статус присутствия: «в сети» или «был(а) в сети N назад».
+export function presenceLabel(
+  lastSeenAt: Date | string | null,
+  online: boolean,
+): string {
+  if (online) return "в сети";
+  if (!lastSeenAt) return "не в сети";
+  return `был(а) ${timeAgo(lastSeenAt)}`;
+}
+
 function plural(n: number, one: string, few: string, many: string): string {
   const mod10 = n % 10;
   const mod100 = n % 100;

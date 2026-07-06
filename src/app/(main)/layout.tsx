@@ -10,6 +10,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { RightRail } from "@/components/right-rail";
 import { SearchBar } from "@/components/search-bar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Presence } from "@/components/presence";
 import { Avatar } from "@/components/ui/avatar";
 import type { NavItem } from "@/components/nav-links";
 
@@ -46,6 +47,7 @@ export default async function MainLayout({
 
   return (
     <div className="min-h-screen">
+      <Presence />
       {/* Верхняя панель */}
       <header className="sticky top-0 z-10 border-b border-border bg-surface/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5 sm:gap-6">

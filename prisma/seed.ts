@@ -92,6 +92,78 @@ async function main() {
     });
   }
 
+  // Демо-беседы (если их ещё нет).
+  const convoCount = await prisma.conversation.count();
+  if (convoCount === 0) {
+    // Личный диалог ivan ↔ maria с парой сообщений.
+    const dm = await prisma.conversation.create({
+      data: {
+        isGroup: false,
+        participants: {
+          create: [{ userId: created.ivan }, { userId: created.maria }],
+        },
+      },
+    });
+    await prisma.message.create({
+      data: {
+        conversationId: dm.id,
+        senderId: created.maria,
+        content: "Привет! Как тебе новая mesto? 😊",
+      },
+    });
+    await prisma.message.create({
+      data: {
+        conversationId: dm.id,
+        senderId: created.ivan,
+        content: "Отличная! Особенно чат — прямо как в телеге 🚀",
+      },
+    });
+
+    // Групповая беседа: ivan (владелец), maria, alex.
+    await prisma.conversation.create({
+      data: {
+        isGroup: true,
+        title: "Друзья mesto 💜",
+        ownerId: created.ivan,
+        participants: {
+          create: [
+            { userId: created.ivan, role: "OWNER" },
+            { userId: created.maria, role: "MEMBER" },
+            { userId: created.alex, role: "MEMBER" },
+          ],
+        },
+        messages: {
+          create: [
+            { senderId: created.ivan, content: "Всем привет в общей беседе! 👋" },
+          ],
+        },
+      },
+    });
+  }
+
+  // Демо-истории (на 24 часа) от maria и alex — чтобы у ivan была лента кружков.
+  const storyCount = await prisma.story.count();
+  if (storyCount === 0) {
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await prisma.story.createMany({
+      data: [
+        {
+          authorId: created.maria,
+          imageUrl:
+            "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800",
+          caption: "Закат сегодня 🌅",
+          expiresAt,
+        },
+        {
+          authorId: created.alex,
+          imageUrl:
+            "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800",
+          expiresAt,
+        },
+      ],
+    });
+  }
+
   console.log("Seed завершён. Логин любым email, пароль: password");
 }
 

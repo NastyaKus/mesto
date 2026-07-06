@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import {
-  getConversationWith,
+  getConversationAccess,
   getMessages,
-  markRead,
+  getParticipantsState,
+  setLastRead,
+  shapeMessage,
 } from "@/lib/messages";
 
-// Поллинг новых сообщений диалога: GET ...?after=<ISO-время>.
+// Поллинг беседы: GET ...?after=<ISO-время>.
+// Отдаём одним ответом новые сообщения + состояние участников
+// (прочтение / «печатает» / онлайн), чтобы не плодить лишние запросы.
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -17,7 +21,8 @@ export async function GET(
   }
 
   const { id } = await params;
-  const access = await getConversationWith(id, session.user.id);
+  const userId = session.user.id;
+  const access = await getConversationAccess(id, userId);
   if (!access) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -25,9 +30,15 @@ export async function GET(
   const afterParam = new URL(req.url).searchParams.get("after");
   const after = afterParam ? new Date(afterParam) : undefined;
 
-  const messages = await getMessages(id, after);
-  // Входящие сообщения помечаем прочитанными при опросе.
-  await markRead(id, session.user.id);
+  const [raw, participants] = await Promise.all([
+    getMessages(id, after),
+    getParticipantsState(id),
+  ]);
+  // Открытие/опрос беседы двигает отметку прочтения.
+  await setLastRead(id, userId);
 
-  return NextResponse.json({ messages });
+  return NextResponse.json({
+    messages: raw.map((m) => shapeMessage(m, userId)),
+    participants,
+  });
 }
