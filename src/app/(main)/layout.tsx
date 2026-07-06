@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/session";
+import { getThemePref } from "@/lib/theme";
 import { getIncomingRequests, getFriendSuggestions } from "@/lib/friends";
 import { countUnread } from "@/lib/messages";
 import { countUnreadNotifications } from "@/lib/notifications";
@@ -21,8 +21,7 @@ export default async function MainLayout({
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const theme =
-    (await cookies()).get("theme")?.value === "dark" ? "dark" : "light";
+  const theme = await getThemePref();
 
   const [incoming, unreadMessages, unreadNotifications, suggestions] =
     await Promise.all([
