@@ -49,11 +49,11 @@ export default async function MainLayout({
     <div className="min-h-screen">
       <Presence />
       {/* Верхняя панель */}
-      <header className="sticky top-0 z-10 border-b border-border bg-surface/80 backdrop-blur">
+      <header className="glass sticky top-0 z-10 border-b border-border">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5 sm:gap-6">
           <Link
             href="/feed"
-            className="brand-gradient text-2xl font-extrabold tracking-tight"
+            className="brand-gradient press text-2xl font-extrabold tracking-tight"
           >
             mesto
           </Link>

@@ -7,12 +7,18 @@ import { useEffect } from "react";
 export function ServiceWorker() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
-    const onLoad = () =>
+    const register = () =>
       navigator.serviceWorker.register("/sw.js").catch(() => {
         // Регистрация не критична — молча игнорируем (напр. приватный режим).
       });
-    window.addEventListener("load", onLoad);
-    return () => window.removeEventListener("load", onLoad);
+    // Если страница уже загружена (частый случай при client-side навигации) —
+    // регистрируем сразу; иначе ждём события load.
+    if (document.readyState === "complete") {
+      register();
+      return;
+    }
+    window.addEventListener("load", register, { once: true });
+    return () => window.removeEventListener("load", register);
   }, []);
 
   return null;

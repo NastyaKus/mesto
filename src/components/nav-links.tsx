@@ -32,14 +32,20 @@ export function NavLinks({
             <Link
               key={item.href}
               href={item.href}
-              className={`relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] transition-colors ${
+              className={`press relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] transition-colors ${
                 active ? "text-brand" : "text-muted"
               }`}
             >
-              <span className="text-xl leading-none">{item.icon}</span>
+              <span
+                className={`flex h-7 w-12 items-center justify-center rounded-full text-xl leading-none transition-all ${
+                  active ? "bg-brand-gradient-soft" : ""
+                }`}
+              >
+                {item.icon}
+              </span>
               <span className="truncate">{item.label}</span>
               {item.badge > 0 && (
-                <span className="bg-brand-gradient absolute top-1 right-[22%] min-w-4 rounded-full px-1 text-[10px] font-semibold text-white">
+                <span className="bg-brand-gradient animate-pop absolute top-1 right-[20%] min-w-4 rounded-full px-1 text-[10px] font-semibold text-white shadow">
                   {item.badge}
                 </span>
               )}
@@ -58,8 +64,10 @@ export function NavLinks({
           <Link
             key={item.href}
             href={item.href}
-            className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              active ? "bg-surface-2 text-brand" : "hover:bg-surface-2"
+            className={`press flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition-all ${
+              active
+                ? "bg-brand-gradient text-white shadow-[var(--shadow-glow)]"
+                : "hover:bg-surface-2"
             }`}
           >
             <span>
@@ -67,7 +75,11 @@ export function NavLinks({
               {item.label}
             </span>
             {item.badge > 0 && (
-              <span className="bg-brand-gradient min-w-5 rounded-full px-2 py-0.5 text-center text-xs font-semibold text-white">
+              <span
+                className={`animate-pop min-w-5 rounded-full px-2 py-0.5 text-center text-xs font-semibold ${
+                  active ? "bg-white/25 text-white" : "bg-brand-gradient text-white"
+                }`}
+              >
                 {item.badge}
               </span>
             )}

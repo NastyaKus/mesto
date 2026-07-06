@@ -81,6 +81,7 @@ export type ConversationSummary = {
   participantCount: number;
   lastMessage: { senderId: string; content: string; imageUrl: string | null; createdAt: Date } | null;
   unread: number;
+  pinned: boolean;
 };
 
 /** Список бесед пользователя (личных и групповых) с последним сообщением и непрочитанными. */
@@ -100,7 +101,7 @@ export async function getConversations(
     orderBy: { lastMessageAt: "desc" },
   });
 
-  return Promise.all(
+  const summaries = await Promise.all(
     convos.map(async (c) => {
       const me = c.participants.find((p) => p.userId === userId);
       const others = c.participants.filter((p) => p.userId !== userId);
@@ -138,9 +139,26 @@ export async function getConversations(
             }
           : null,
         unread,
+        pinned: me?.pinnedAt != null,
+        // Служебное поле для сортировки (не входит в тип).
+        _pinnedAt: me?.pinnedAt ?? null,
       };
     }),
   );
+
+  // Закреплённые — вверх (по времени закрепления), остальные — по последнему сообщению.
+  summaries.sort((a, b) => {
+    if (a._pinnedAt && b._pinnedAt)
+      return b._pinnedAt.getTime() - a._pinnedAt.getTime();
+    if (a._pinnedAt) return -1;
+    if (b._pinnedAt) return 1;
+    return 0;
+  });
+
+  return summaries.map(({ _pinnedAt, ...s }) => {
+    void _pinnedAt;
+    return s;
+  });
 }
 
 /** Проверяет участие пользователя в беседе; возвращает беседу, участников и (для DM) собеседника. */
