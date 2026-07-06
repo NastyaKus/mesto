@@ -17,7 +17,7 @@ export function Sidebar({ user, items }: Props) {
     <aside className="animate-fade-up hidden w-56 shrink-0 flex-col gap-3 md:flex">
       <Link
         href={`/profile/${user.username}`}
-        className="card flex items-center gap-3 p-3 transition-transform hover:-translate-y-0.5"
+        className="card hover-lift flex items-center gap-3 p-3"
       >
         <Avatar src={user.avatarUrl} name={user.displayName} size={44} />
         <div className="min-w-0">

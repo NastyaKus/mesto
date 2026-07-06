@@ -1,16 +1,45 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4f5fa; /* мягкий сиренево-серый фон */
+  --background: #eef0f8; /* мягкий сиренево-серый фон */
   --surface: #ffffff;
-  --surface-2: #f7f8fc; /* вложенные блоки */
+  --surface-2: #f3f4fb; /* вложенные блоки */
+  --surface-3: #e9eaf6; /* ещё глубже (skeleton, hover) */
   --foreground: #14152a;
-  --muted: #7b7d95;
+  --muted: #71738c;
   --brand: #6c5ce7; /* фирменный фиолетовый mesto */
   --brand-2: #a855f7; /* второй цвет градиента */
   --brand-hover: #5b4bd1;
-  --border: #ececf4;
+  --border: #e6e7f2;
   --like: #f43f5e;
+
+  /* Градиенты */
+  --grad-brand: linear-gradient(120deg, var(--brand), var(--brand-2));
+  --grad-brand-soft: linear-gradient(
+    120deg,
+    color-mix(in oklab, var(--brand) 16%, transparent),
+    color-mix(in oklab, var(--brand-2) 16%, transparent)
+  );
+
+  /* Радиусы */
+  --r-sm: 0.6rem;
+  --r-md: 0.85rem;
+  --r-lg: 1.15rem;
+  --r-xl: 1.6rem;
+
+  /* Тени с фирменным оттенком */
+  --shadow-sm: 0 1px 2px rgba(23, 18, 68, 0.05), 0 1px 3px rgba(23, 18, 68, 0.04);
+  --shadow-md: 0 4px 14px -4px rgba(60, 45, 130, 0.14), 0 2px 6px -2px rgba(60, 45, 130, 0.08);
+  --shadow-lg: 0 18px 44px -12px rgba(60, 45, 130, 0.28), 0 6px 16px -8px rgba(60, 45, 130, 0.16);
+  --shadow-glow: 0 8px 26px -6px rgba(108, 92, 231, 0.5);
+
+  /* Стекло */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.5);
+
+  /* Пружинные тайминги */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Тёмная тема — переопределяем те же переменные, бренд оставляем.
@@ -18,23 +47,35 @@
    1) явный выбор пользователя — [data-theme="dark"];
    2) режим «как в системе» — атрибут не выставлен, а ОС предпочитает тёмное. */
 [data-theme="dark"] {
-  --background: #0f1015;
-  --surface: #191a20;
-  --surface-2: #23242d;
+  --background: #0c0d13;
+  --surface: #17181f;
+  --surface-2: #20222c;
+  --surface-3: #2a2c38;
   --foreground: #e9e9f0;
-  --muted: #9598a8;
-  --border: #2a2c37;
+  --muted: #9295a8;
+  --border: #282a36;
+  --glass-bg: rgba(20, 21, 30, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px -4px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 20px 50px -12px rgba(0, 0, 0, 0.7);
   color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --background: #0f1015;
-    --surface: #191a20;
-    --surface-2: #23242d;
+    --background: #0c0d13;
+    --surface: #17181f;
+    --surface-2: #20222c;
+    --surface-3: #2a2c38;
     --foreground: #e9e9f0;
-    --muted: #9598a8;
-    --border: #2a2c37;
+    --muted: #9295a8;
+    --border: #282a36;
+    --glass-bg: rgba(20, 21, 30, 0.72);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 16px -4px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 20px 50px -12px rgba(0, 0, 0, 0.7);
     color-scheme: dark;
   }
 }
@@ -43,6 +84,7 @@
   --color-background: var(--background);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-brand: var(--brand);
@@ -65,158 +107,160 @@ body {
     sans-serif;
 }
 
+/* Декоративное фирменное свечение на фоне (тонкое). */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60rem 40rem at 12% -8%, color-mix(in oklab, var(--brand) 14%, transparent), transparent 60%),
+    radial-gradient(50rem 40rem at 105% 0%, color-mix(in oklab, var(--brand-2) 12%, transparent), transparent 55%);
+}
+
 /* ===== Брендинг ===== */
 .brand-gradient {
-  background: linear-gradient(120deg, var(--brand), var(--brand-2));
+  background: var(--grad-brand);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 .bg-brand-gradient {
-  background: linear-gradient(120deg, var(--brand), var(--brand-2));
+  background: var(--grad-brand);
+}
+.bg-brand-gradient-soft {
+  background: var(--grad-brand-soft);
+}
+
+/* Стекло — для липкой шапки и нижней навигации. */
+.glass {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: saturate(160%) blur(14px);
+  backdrop-filter: saturate(160%) blur(14px);
 }
 
 /* ===== Анимации ===== */
 @keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 @keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 @keyframes pop {
-  0% {
-    transform: scale(1);
-  }
-  40% {
-    transform: scale(1.35);
-  }
-  100% {
-    transform: scale(1);
-  }
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35); }
+  100% { transform: scale(1); }
 }
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 @keyframes story-progress {
-  from {
-    width: 0%;
-  }
-  to {
-    width: 100%;
-  }
+  from { width: 0%; }
+  to { width: 100%; }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  100% { background-position: -200% 0; }
+}
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
 }
 
-.animate-fade-up {
-  animation: fade-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.animate-fade-in {
-  animation: fade-in 0.3s ease both;
-}
-.animate-pop {
-  animation: pop 0.35s ease;
-}
+.animate-fade-up { animation: fade-up 0.45s var(--ease-out) both; }
+.animate-fade-in { animation: fade-in 0.3s ease both; }
+.animate-pop { animation: pop 0.35s var(--ease-spring); }
+.animate-scale-in { animation: scale-in 0.28s var(--ease-spring) both; }
+.animate-slide-up { animation: slide-up 0.32s var(--ease-out) both; }
 
 /* Появление элементов списка каскадом */
-.stagger > * {
-  animation: fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.stagger > *:nth-child(1) {
-  animation-delay: 0.02s;
-}
-.stagger > *:nth-child(2) {
-  animation-delay: 0.06s;
-}
-.stagger > *:nth-child(3) {
-  animation-delay: 0.1s;
-}
-.stagger > *:nth-child(4) {
-  animation-delay: 0.14s;
-}
-.stagger > *:nth-child(5) {
-  animation-delay: 0.18s;
-}
-.stagger > *:nth-child(n + 6) {
-  animation-delay: 0.22s;
+.stagger > * { animation: fade-up 0.5s var(--ease-out) both; }
+.stagger > *:nth-child(1) { animation-delay: 0.03s; }
+.stagger > *:nth-child(2) { animation-delay: 0.08s; }
+.stagger > *:nth-child(3) { animation-delay: 0.13s; }
+.stagger > *:nth-child(4) { animation-delay: 0.18s; }
+.stagger > *:nth-child(5) { animation-delay: 0.23s; }
+.stagger > *:nth-child(n + 6) { animation-delay: 0.28s; }
+
+/* Микро-интеракции */
+.hover-lift { transition: transform 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out); }
+.hover-lift:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.press { transition: transform 0.12s ease; }
+.press:active { transform: scale(0.96); }
+
+/* Скелетон-загрузка */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 25%,
+    var(--surface-3) 37%,
+    var(--surface-2) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
 }
 
 /* ===== Переиспользуемые классы ===== */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 1rem;
-  box-shadow: 0 1px 2px rgba(20, 21, 42, 0.04);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-primary {
-  background: linear-gradient(120deg, var(--brand), var(--brand-2));
+  background: var(--grad-brand);
   color: #fff;
-  border-radius: 0.75rem;
-  font-weight: 500;
+  border-radius: var(--r-md);
+  font-weight: 600;
   transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease,
-    opacity 0.15s ease;
-  box-shadow: 0 4px 14px rgba(108, 92, 231, 0.3);
+    transform 0.16s var(--ease-out),
+    box-shadow 0.16s var(--ease-out),
+    opacity 0.16s ease,
+    filter 0.16s ease;
+  box-shadow: var(--shadow-glow);
 }
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(108, 92, 231, 0.4);
+  filter: brightness(1.05);
+  box-shadow: 0 10px 30px -6px rgba(108, 92, 231, 0.6);
 }
-.btn-primary:active {
-  transform: translateY(0);
-}
-.btn-primary:disabled {
-  opacity: 0.6;
-  transform: none;
-  box-shadow: none;
-}
+.btn-primary:active { transform: translateY(0) scale(0.98); }
+.btn-primary:disabled { opacity: 0.6; transform: none; box-shadow: none; filter: none; }
 
 .btn-ghost {
   background: var(--surface-2);
   color: var(--foreground);
-  border-radius: 0.75rem;
+  border-radius: var(--r-md);
   font-weight: 500;
-  transition:
-    background 0.15s ease,
-    transform 0.15s ease;
+  transition: background 0.16s ease, transform 0.16s var(--ease-out);
 }
-.btn-ghost:hover {
-  background: var(--border);
-}
-.btn-ghost:active {
-  transform: scale(0.97);
-}
+.btn-ghost:hover { background: var(--surface-3); }
+.btn-ghost:active { transform: scale(0.96); }
 
 .input {
   width: 100%;
   border: 1px solid var(--border);
   background: var(--surface-2);
-  border-radius: 0.75rem;
-  padding: 0.55rem 0.85rem;
+  border-radius: var(--r-md);
+  padding: 0.6rem 0.9rem;
   outline: none;
-  transition:
-    border-color 0.15s ease,
-    background 0.15s ease,
-    box-shadow 0.15s ease;
+  transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
 }
 .input:focus {
   border-color: var(--brand);
   background: var(--surface);
-  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.12);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--brand) 18%, transparent);
 }
 
 .spinner {
@@ -234,7 +278,13 @@ body {
   .stagger > *,
   .animate-fade-up,
   .animate-fade-in,
-  .animate-pop {
+  .animate-pop,
+  .animate-scale-in,
+  .animate-slide-up,
+  .hover-lift,
+  .shimmer,
+  body::before {
     animation: none !important;
+    transition: none !important;
   }
 }

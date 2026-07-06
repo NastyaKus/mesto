@@ -10,6 +10,7 @@ import {
 } from "@/lib/friends";
 import { getUserPosts } from "@/lib/posts";
 import { Avatar } from "@/components/ui/avatar";
+import { Lightbox } from "@/components/ui/lightbox";
 import { FriendButton } from "@/components/friend-button";
 import { MessageButton } from "@/components/message-button";
 import { PostComposer } from "@/components/post-composer";
@@ -56,10 +57,8 @@ export default async function ProfilePage({
       {/* Шапка профиля с обложкой */}
       <section className="card animate-fade-up overflow-hidden p-0">
         {profile.coverUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Lightbox
             src={profile.coverUrl}
-            alt=""
             className="h-36 w-full object-cover"
           />
         ) : (
