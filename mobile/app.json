@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "mesto",
+    "slug": "mesto",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "mesto",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0c0d13",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0c0d13"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mesto.app"
+    },
+    "android": {
+      "package": "com.mesto.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#6c5ce7",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": ["expo-secure-store"]
+  }
+}
