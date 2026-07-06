@@ -20,6 +20,7 @@ export const publicUserSelect = {
   location: true,
   website: true,
   isPrivate: true,
+  lastSeenAt: true,
   createdAt: true,
 } as const;
 

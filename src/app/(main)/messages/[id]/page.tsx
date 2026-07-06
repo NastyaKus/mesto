@@ -1,6 +1,12 @@
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
-import { getConversationWith, getMessages, markRead } from "@/lib/messages";
+import {
+  getConversationAccess,
+  getMessages,
+  getParticipantsState,
+  setLastRead,
+  shapeMessage,
+} from "@/lib/messages";
 import { ChatWindow } from "@/components/chat-window";
 
 export default async function ConversationPage({
@@ -11,28 +17,36 @@ export default async function ConversationPage({
   const { id } = await params;
   const me = (await getCurrentUser())!;
 
-  const access = await getConversationWith(id, me.id);
+  const access = await getConversationAccess(id, me.id);
   if (!access) notFound();
 
-  const [messages] = await Promise.all([
+  const [raw, participants] = await Promise.all([
     getMessages(id),
-    markRead(id, me.id),
+    getParticipantsState(id),
+    setLastRead(id, me.id),
   ]);
 
-  const serialized = messages.map((m) => ({
-    id: m.id,
-    senderId: m.senderId,
-    content: m.content,
-    imageUrl: m.imageUrl,
-    createdAt: m.createdAt.toISOString(),
-  }));
+  const title = access.convo.isGroup
+    ? (access.convo.title ?? "Беседа")
+    : (access.other?.displayName ?? "Диалог");
+
+  const headerUser = access.other
+    ? {
+        username: access.other.username,
+        displayName: access.other.displayName,
+        avatarUrl: access.other.avatarUrl,
+      }
+    : null;
 
   return (
     <ChatWindow
       conversationId={id}
       meId={me.id}
-      other={access.other}
-      initialMessages={serialized}
+      isGroup={access.convo.isGroup}
+      title={title}
+      headerUser={headerUser}
+      initialMessages={raw.map((m) => shapeMessage(m, me.id))}
+      initialParticipants={participants}
     />
   );
 }

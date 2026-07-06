@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/session";
+import { getThemePref } from "@/lib/theme";
 import { getIncomingRequests, getFriendSuggestions } from "@/lib/friends";
 import { countUnread } from "@/lib/messages";
 import { countUnreadNotifications } from "@/lib/notifications";
@@ -10,6 +10,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { RightRail } from "@/components/right-rail";
 import { SearchBar } from "@/components/search-bar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Presence } from "@/components/presence";
 import { Avatar } from "@/components/ui/avatar";
 import type { NavItem } from "@/components/nav-links";
 
@@ -21,8 +22,7 @@ export default async function MainLayout({
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const theme =
-    (await cookies()).get("theme")?.value === "dark" ? "dark" : "light";
+  const theme = await getThemePref();
 
   const [incoming, unreadMessages, unreadNotifications, suggestions] =
     await Promise.all([
@@ -47,6 +47,7 @@ export default async function MainLayout({
 
   return (
     <div className="min-h-screen">
+      <Presence />
       {/* Верхняя панель */}
       <header className="sticky top-0 z-10 border-b border-border bg-surface/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5 sm:gap-6">

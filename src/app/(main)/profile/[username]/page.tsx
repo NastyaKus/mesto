@@ -29,17 +29,23 @@ export default async function ProfilePage({
   });
   if (!profile) notFound();
 
-  const [state, friendsCount, friends, posts] = await Promise.all([
+  const [state, friendsCount] = await Promise.all([
     getFriendState(me.id, profile.id),
     countFriends(profile.id),
-    getFriends(profile.id),
-    getUserPosts(profile.id, me.id),
   ]);
 
   const isSelf = state === "SELF";
   // Закрытый профиль: не-друзьям прячем стену и список друзей.
-  const restricted =
-    profile.isPrivate && state !== "SELF" && state !== "FRIENDS";
+  const restricted = profile.isPrivate && !isSelf && state !== "FRIENDS";
+
+  // Стену и друзей грузим только если профиль доступен зрителю — иначе это
+  // лишние запросы к БД ради данных, которые всё равно не покажем.
+  const [friends, posts] = restricted
+    ? [[], []]
+    : await Promise.all([
+        getFriends(profile.id),
+        getUserPosts(profile.id, me.id),
+      ]);
   const joined = new Date(profile.createdAt).toLocaleDateString("ru-RU", {
     month: "long",
     year: "numeric",
@@ -113,10 +119,12 @@ export default async function ProfilePage({
               <span className="font-semibold">{friendsCount}</span>{" "}
               <span className="text-muted">друзей</span>
             </span>
-            <span>
-              <span className="font-semibold">{posts.length}</span>{" "}
-              <span className="text-muted">записей</span>
-            </span>
+            {!restricted && (
+              <span>
+                <span className="font-semibold">{posts.length}</span>{" "}
+                <span className="text-muted">записей</span>
+              </span>
+            )}
           </div>
         </div>
       </section>

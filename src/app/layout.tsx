@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { cookies } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
+import { getThemePref } from "@/lib/theme";
+import { ServiceWorker } from "@/components/service-worker";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -16,10 +17,20 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "mesto — социальная сеть",
   description: "mesto — место, где вы на связи",
+  applicationName: "mesto",
+  appleWebApp: {
+    capable: true,
+    title: "mesto",
+    statusBarStyle: "default",
+  },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#6c5ce7",
+  // Цвет системной панели: фирменный на светлой, тёмная поверхность на тёмной.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#6c5ce7" },
+    { media: "(prefers-color-scheme: dark)", color: "#191a20" },
+  ],
 };
 
 export default async function RootLayout({
@@ -27,16 +38,21 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Тема из cookie — чтобы не было вспышки светлого при загрузке.
-  const theme = (await cookies()).get("theme")?.value === "dark" ? "dark" : "light";
+  // Тема из cookie. Явный выбор пишем в data-theme (без вспышки);
+  // «системный» режим оставляет атрибут пустым — за тему отвечает CSS-медиазапрос.
+  const pref = await getThemePref();
+  const themeAttr = pref === "system" ? {} : { "data-theme": pref };
 
   return (
     <html
       lang="ru"
-      data-theme={theme}
+      {...themeAttr}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <ServiceWorker />
+      </body>
     </html>
   );
 }

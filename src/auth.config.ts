@@ -12,6 +12,11 @@ export const authConfig = {
     // Контроль доступа к страницам на уровне middleware.
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
+
+      // Офлайн-заглушку service worker должен кэшировать как есть (а не редирект
+      // на логин), поэтому она доступна без авторизации.
+      if (nextUrl.pathname === "/offline") return true;
+
       const authPages = ["/login", "/register"];
       const isOnAuthPage = authPages.some((p) =>
         nextUrl.pathname.startsWith(p),

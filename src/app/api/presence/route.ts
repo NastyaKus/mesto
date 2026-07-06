@@ -1,0 +1,16 @@
+import { NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
+
+// Heartbeat онлайн-статуса: клиент шлёт POST, обновляем lastSeenAt.
+export async function POST() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ ok: false }, { status: 401 });
+  }
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { lastSeenAt: new Date() },
+  });
+  return NextResponse.json({ ok: true });
+}

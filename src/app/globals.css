@@ -13,7 +13,10 @@
   --like: #f43f5e;
 }
 
-/* Тёмная тема — переопределяем те же переменные, бренд оставляем. */
+/* Тёмная тема — переопределяем те же переменные, бренд оставляем.
+   Применяется двумя способами:
+   1) явный выбор пользователя — [data-theme="dark"];
+   2) режим «как в системе» — атрибут не выставлен, а ОС предпочитает тёмное. */
 [data-theme="dark"] {
   --background: #0f1015;
   --surface: #191a20;
@@ -22,6 +25,18 @@
   --muted: #9598a8;
   --border: #2a2c37;
   color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --background: #0f1015;
+    --surface: #191a20;
+    --surface-2: #23242d;
+    --foreground: #e9e9f0;
+    --muted: #9598a8;
+    --border: #2a2c37;
+    color-scheme: dark;
+  }
 }
 
 @theme inline {
@@ -94,6 +109,14 @@ body {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+@keyframes story-progress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
   }
 }
 

@@ -30,6 +30,7 @@ model User {
   location     String? // город
   website      String? // ссылка на сайт/соцсеть
   isPrivate    Boolean  @default(false) // закрытый профиль
+  lastSeenAt   DateTime? // последняя активность — для онлайн-статуса
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -42,10 +43,15 @@ model User {
   likes    Like[]
   comments Comment[]
 
-  // Диалоги: пользователь может быть участником «A» или «B» пары.
-  conversationsA Conversation[] @relation("ConversationA")
-  conversationsB Conversation[] @relation("ConversationB")
-  messages       Message[]
+  // Диалоги: участие в беседах (1-на-1 и групповых) + отправленные сообщения.
+  convParticipations ConversationParticipant[]
+  ownedConversations Conversation[]           @relation("ConvOwner")
+  messages           Message[]
+  messageReactions   MessageReaction[]
+
+  // Истории (24ч) и их просмотры.
+  stories    Story[]
+  storyViews StoryView[]
 
   ownedGroups        Group[]           @relation("GroupOwner")
   memberships        GroupMembership[]
@@ -122,22 +128,41 @@ model Friendship {
   @@index([requesterId])
 }
 
-// Диалог 1-на-1. aId/bId всегда упорядочены (aId < bId),
-// чтобы пара пользователей давала ровно один диалог.
+// Беседа: и личная (1-на-1), и групповая. Участники — в ConversationParticipant.
+// Для личной беседы isGroup=false и ровно два участника; уникальность пары
+// обеспечивается на уровне приложения (getOrCreateConversation).
 model Conversation {
   id            String   @id @default(cuid())
-  aId           String
-  bId           String
+  isGroup       Boolean  @default(false)
+  title         String? // название групповой беседы
+  avatarUrl     String? // аватар групповой беседы
+  ownerId       String? // создатель групповой беседы
   lastMessageAt DateTime @default(now())
   createdAt     DateTime @default(now())
 
-  a        User      @relation("ConversationA", fields: [aId], references: [id], onDelete: Cascade)
-  b        User      @relation("ConversationB", fields: [bId], references: [id], onDelete: Cascade)
-  messages Message[]
+  owner        User?                     @relation("ConvOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  participants ConversationParticipant[]
+  messages     Message[]
 
-  @@unique([aId, bId])
-  @@index([aId])
-  @@index([bId])
+  @@index([lastMessageAt])
+}
+
+// Участник беседы. Здесь же — эфемерное состояние чтения и набора текста,
+// одинаково работающее для личных и групповых бесед.
+model ConversationParticipant {
+  id             String    @id @default(cuid())
+  conversationId String
+  userId         String
+  role           GroupRole @default(MEMBER)
+  lastReadAt     DateTime? // до какого момента участник прочитал беседу
+  lastTypingAt   DateTime? // когда последний раз печатал (TTL ~5с для индикатора)
+  joinedAt       DateTime  @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
 }
 
 model Message {
@@ -146,13 +171,33 @@ model Message {
   senderId       String
   content        String
   imageUrl       String? // прикреплённая картинка
-  readAt         DateTime?
+  replyToId      String? // ответ-цитата на другое сообщение
+  editedAt       DateTime? // проставляется при редактировании
+  deletedAt      DateTime? // мягкое удаление → «сообщение удалено»
   createdAt      DateTime  @default(now())
 
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  conversation Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User              @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  replyTo      Message?          @relation("MsgReply", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies      Message[]         @relation("MsgReply")
+  reactions    MessageReaction[]
 
   @@index([conversationId, createdAt])
+}
+
+model MessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Один пользователь — одна реакция на сообщение.
+  @@unique([messageId, userId])
+  @@index([messageId])
 }
 
 enum GroupRole {
@@ -213,4 +258,33 @@ model Notification {
   actor User @relation("NotifActor", fields: [actorId], references: [id], onDelete: Cascade)
 
   @@index([userId, read, createdAt])
+}
+
+// История: фото на 24 часа. Активна, пока expiresAt в будущем.
+model Story {
+  id        String   @id @default(cuid())
+  authorId  String
+  imageUrl  String
+  caption   String?
+  createdAt DateTime @default(now())
+  expiresAt DateTime // createdAt + 24ч
+
+  author User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  views  StoryView[]
+
+  @@index([authorId, expiresAt])
+  @@index([expiresAt])
+}
+
+model StoryView {
+  id        String   @id @default(cuid())
+  storyId   String
+  viewerId  String
+  createdAt DateTime @default(now())
+
+  story  Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  viewer User  @relation(fields: [viewerId], references: [id], onDelete: Cascade)
+
+  // Один зритель — один просмотр истории.
+  @@unique([storyId, viewerId])
 }
