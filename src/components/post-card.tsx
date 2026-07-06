@@ -4,11 +4,22 @@ import { Lightbox } from "@/components/ui/lightbox";
 import { PostContent } from "@/components/post-content";
 import { PostInteractions } from "@/components/post-interactions";
 import { DeletePostButton } from "@/components/delete-post-button";
+import { PinPostButton } from "@/components/pin-post-button";
 import { renderRichText } from "@/lib/rich-text";
 import { timeAgo } from "@/lib/format";
 import type { FeedPost } from "@/lib/posts";
 
-export function PostCard({ post, meId }: { post: FeedPost; meId: string }) {
+export function PostCard({
+  post,
+  meId,
+  showPin = false,
+  pinned = false,
+}: {
+  post: FeedPost;
+  meId: string;
+  showPin?: boolean;
+  pinned?: boolean;
+}) {
   return (
     <article className="card p-4">
       <header className="flex items-center gap-3">
@@ -54,6 +65,9 @@ export function PostCard({ post, meId }: { post: FeedPost; meId: string }) {
               </div>
             </div>
           </>
+        )}
+        {showPin && post.isMine && (
+          <PinPostButton postId={post.id} pinned={pinned} />
         )}
         {post.isMine && <DeletePostButton postId={post.id} />}
       </header>

@@ -31,6 +31,7 @@ model User {
   website      String? // ссылка на сайт/соцсеть
   isPrivate    Boolean  @default(false) // закрытый профиль
   lastSeenAt   DateTime? // последняя активность — для онлайн-статуса
+  pinnedPostId String? // закреплённый в профиле пост
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -43,6 +44,9 @@ model User {
   likes     Like[]
   comments  Comment[]
   bookmarks Bookmark[]
+
+  // Закреплённый в профиле пост (если задан).
+  pinnedPost Post? @relation("UserPinnedPost", fields: [pinnedPostId], references: [id], onDelete: SetNull)
 
   // Push-подписки для веб-уведомлений.
   pushSubscriptions PushSubscription[]
@@ -82,6 +86,7 @@ model Post {
   likes     Like[]
   comments  Comment[]
   bookmarks Bookmark[]
+  pinnedByUsers User[] @relation("UserPinnedPost")
 
   @@index([authorId, createdAt])
   @@index([groupId, createdAt])

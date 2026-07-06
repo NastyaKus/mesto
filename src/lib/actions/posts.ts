@@ -123,6 +123,31 @@ export async function deletePost(postId: string) {
   revalidatePosts();
 }
 
+/** Закрепить свой пост в профиле (только один). */
+export async function pinPost(postId: string) {
+  const userId = await requireUserId();
+  const post = await prisma.post.findFirst({
+    where: { id: postId, authorId: userId },
+    select: { id: true },
+  });
+  if (!post) return;
+  await prisma.user.update({
+    where: { id: userId },
+    data: { pinnedPostId: postId },
+  });
+  revalidatePosts();
+}
+
+/** Снять закрепление поста в профиле. */
+export async function unpinPost() {
+  const userId = await requireUserId();
+  await prisma.user.update({
+    where: { id: userId },
+    data: { pinnedPostId: null },
+  });
+  revalidatePosts();
+}
+
 /** Добавить/убрать пост из закладок. */
 export async function toggleBookmark(postId: string) {
   const userId = await requireUserId();

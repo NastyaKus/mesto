@@ -12,7 +12,7 @@ const STORY_MS = 6000;
 type Viewer = { username: string; displayName: string; avatarUrl: string | null };
 
 export function StoryViewer({
-  groups,
+  groups: initialGroups,
   startGroup,
   onClose,
 }: {
@@ -21,6 +21,9 @@ export function StoryViewer({
   onClose: () => void;
 }) {
   const router = useRouter();
+  // Снимок групп на момент открытия: серверная пересортировка (после отметки
+  // просмотра) не должна ломать индексы, пока просмотрщик открыт.
+  const [groups] = useState(initialGroups);
   const [gi, setGi] = useState(startGroup);
   const [si, setSi] = useState(0);
   const [viewers, setViewers] = useState<Viewer[] | null>(null);
@@ -29,18 +32,24 @@ export function StoryViewer({
   const group = groups[gi];
   const story = group?.stories[si];
 
+  // Закрытие: один раз обновляем ленту (кольца просмотренных) и выходим.
+  const close = useCallback(() => {
+    router.refresh();
+    onClose();
+  }, [router, onClose]);
+
   const advance = useCallback(() => {
     setViewers(null);
-    if (!group) return onClose();
+    if (!group) return close();
     if (si < group.stories.length - 1) {
       setSi(si + 1);
     } else if (gi < groups.length - 1) {
       setGi(gi + 1);
       setSi(0);
     } else {
-      onClose();
+      close();
     }
-  }, [gi, si, group, groups.length, onClose]);
+  }, [gi, si, group, groups.length, close]);
 
   const back = () => {
     setViewers(null);
@@ -52,12 +61,13 @@ export function StoryViewer({
     }
   };
 
-  // Отмечаем просмотр и запускаем авто-переход.
+  // Отмечаем просмотр (персист) и запускаем авто-переход. БЕЗ router.refresh —
+  // иначе пересортировка на сервере ломает открытый просмотрщик.
   useEffect(() => {
     if (!story) return;
     if (!group.isMine && !seen.current.has(story.id)) {
       seen.current.add(story.id);
-      viewStory(story.id).then(() => router.refresh());
+      viewStory(story.id);
     }
     const timer = setTimeout(advance, STORY_MS);
     return () => clearTimeout(timer);
@@ -69,7 +79,7 @@ export function StoryViewer({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight") advance();
       else if (e.key === "ArrowLeft") back();
-      else if (e.key === "Escape") onClose();
+      else if (e.key === "Escape") close();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -84,8 +94,7 @@ export function StoryViewer({
 
   const onDelete = async () => {
     await removeStory(story.id);
-    router.refresh();
-    onClose();
+    close();
   };
 
   return (
@@ -96,6 +105,8 @@ export function StoryViewer({
           {group.stories.map((s, i) => (
             <div key={s.id} className="h-0.5 flex-1 overflow-hidden rounded-full bg-white/30">
               <div
+                // Ключ по (gi,si) перезапускает CSS-анимацию при смене истории.
+                key={`${gi}-${si}-${i}`}
                 className="h-full bg-white"
                 style={{
                   width: i < si ? "100%" : i === si ? "100%" : "0%",
@@ -121,7 +132,7 @@ export function StoryViewer({
             <div className="text-xs text-white/70">{timeAgo(story.createdAt)}</div>
           </div>
           <button
-            onClick={onClose}
+            onClick={close}
             className="px-2 text-2xl leading-none text-white/80 hover:text-white"
             aria-label="Закрыть"
           >
@@ -130,7 +141,7 @@ export function StoryViewer({
         </div>
 
         {/* Картинка + зоны навигации */}
-        <div className="relative flex flex-1 items-center justify-center overflow-hidden">
+        <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={story.imageUrl}

@@ -31,8 +31,13 @@ const POST_TYPES: NotificationType[] = [
   "MENTION",
 ];
 
-function linkFor(type: NotificationType, username: string): string {
-  if (POST_TYPES.includes(type)) return "/feed";
+function linkFor(
+  type: NotificationType,
+  username: string,
+  entityId: string | null,
+): string {
+  // Лайки/комментарии/упоминания ведут на конкретный пост, если известен id.
+  if (POST_TYPES.includes(type)) return entityId ? `/posts/${entityId}` : "/feed";
   return `/profile/${username}`;
 }
 
@@ -57,8 +62,8 @@ export default async function NotificationsPage() {
           {notifications.map((n) => (
             <Link
               key={n.id}
-              href={linkFor(n.type, n.actor.username)}
-              className={`card flex items-center gap-3 p-3 transition-transform hover:-translate-y-0.5 ${
+              href={linkFor(n.type, n.actor.username, n.entityId)}
+              className={`card hover-lift flex items-center gap-3 p-3 ${
                 n.read ? "" : "border-l-4 border-l-brand"
               }`}
             >

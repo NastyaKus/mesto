@@ -51,12 +51,14 @@ export async function createGroupConversation(
   ownerId: string,
   title: string,
   memberIds: string[],
+  avatarUrl?: string | null,
 ): Promise<string> {
   const ids = Array.from(new Set([ownerId, ...memberIds]));
   const convo = await prisma.conversation.create({
     data: {
       isGroup: true,
       title: title.slice(0, 60),
+      avatarUrl: avatarUrl || null,
       ownerId,
       participants: {
         create: ids.map((userId) => ({
