@@ -1,5 +1,6 @@
 import { getCurrentUser } from "@/lib/session";
 import { SettingsForm } from "@/components/settings-form";
+import { PushToggle } from "@/components/push-toggle";
 
 export default async function SettingsPage() {
   const me = (await getCurrentUser())!;
@@ -17,6 +18,7 @@ export default async function SettingsPage() {
         coverUrl={me.coverUrl}
         isPrivate={me.isPrivate}
       />
+      <PushToggle />
     </div>
   );
 }

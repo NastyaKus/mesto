@@ -9,6 +9,8 @@ import {
   addComment,
   editComment,
   deleteComment,
+  toggleBookmark,
+  repost,
 } from "@/lib/actions/posts";
 import type { FeedComment, FeedPost } from "@/lib/posts";
 
@@ -50,18 +52,32 @@ export function PostInteractions({
   reactions,
   myReaction,
   comments,
+  savedByMe,
   meId,
 }: {
   postId: string;
   reactions: FeedPost["reactions"];
   myReaction: string | null;
   comments: FeedComment[];
+  savedByMe: boolean;
   meId: string;
 }) {
   const [, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [saved, setSaved] = useState(savedByMe);
+  const [reposted, setReposted] = useState(false);
+
+  const onBookmark = () => {
+    setSaved((v) => !v);
+    startTransition(() => toggleBookmark(postId));
+  };
+  const onRepost = () => {
+    if (reposted) return;
+    setReposted(true);
+    startTransition(() => repost(postId));
+  };
 
   const [state, setState] = useOptimistic<ReactionState>({
     reactions,
@@ -119,12 +135,31 @@ export function PostInteractions({
           </span>
         )}
 
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="btn-ghost ml-auto flex items-center gap-1.5 px-3 py-1.5"
-        >
-          💬 {comments.length > 0 ? comments.length : "Комментировать"}
-        </button>
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={onBookmark}
+            title={saved ? "Убрать из закладок" : "Сохранить"}
+            className="btn-ghost press flex items-center gap-1.5 px-3 py-1.5"
+            style={{ color: saved ? "var(--brand)" : undefined }}
+          >
+            {saved ? "🔖" : "🏷️"}
+          </button>
+          <button
+            onClick={onRepost}
+            disabled={reposted}
+            title="Репост на свою стену"
+            className="btn-ghost press flex items-center gap-1.5 px-3 py-1.5"
+            style={{ color: reposted ? "var(--brand)" : undefined }}
+          >
+            🔁
+          </button>
+          <button
+            onClick={() => setOpen((v) => !v)}
+            className="btn-ghost flex items-center gap-1.5 px-3 py-1.5"
+          >
+            💬 {comments.length > 0 ? comments.length : "Коммент."}
+          </button>
+        </div>
       </div>
 
       {open && (

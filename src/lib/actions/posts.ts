@@ -123,6 +123,41 @@ export async function deletePost(postId: string) {
   revalidatePosts();
 }
 
+/** Добавить/убрать пост из закладок. */
+export async function toggleBookmark(postId: string) {
+  const userId = await requireUserId();
+  const key = { userId_postId: { userId, postId } };
+  const existing = await prisma.bookmark.findUnique({ where: key });
+  if (existing) {
+    await prisma.bookmark.delete({ where: key });
+  } else {
+    await prisma.bookmark.create({ data: { userId, postId } });
+  }
+  revalidatePosts();
+  revalidatePath("/saved");
+}
+
+/** Репост записи на свою стену (с необязательной подводкой). */
+export async function repost(postId: string, comment?: string) {
+  const userId = await requireUserId();
+  // Разворачиваем цепочку: репост всегда ссылается на оригинал.
+  const target = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { id: true, repostOfId: true },
+  });
+  if (!target) return;
+  const originalId = target.repostOfId ?? target.id;
+
+  await prisma.post.create({
+    data: {
+      authorId: userId,
+      content: (comment ?? "").trim().slice(0, 2000),
+      repostOfId: originalId,
+    },
+  });
+  revalidatePosts();
+}
+
 /** Поставить/сменить/снять эмодзи-реакцию. */
 export async function setReaction(postId: string, emoji: string) {
   const userId = await requireUserId();

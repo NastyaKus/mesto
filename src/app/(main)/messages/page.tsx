@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/session";
 import { getConversations } from "@/lib/messages";
 import { Avatar } from "@/components/ui/avatar";
+import { PinButton } from "@/components/pin-button";
 import { timeAgo } from "@/lib/format";
 
 export default async function MessagesPage() {
@@ -28,11 +29,12 @@ export default async function MessagesPage() {
       ) : (
         <div className="stagger flex flex-col gap-2">
           {conversations.map((c) => (
-            <Link
-              key={c.id}
-              href={`/messages/${c.id}`}
-              className="card flex items-center gap-3 p-3 transition-transform hover:-translate-y-0.5"
-            >
+            <div key={c.id} className="group relative">
+              <PinButton conversationId={c.id} pinned={c.pinned} />
+              <Link
+                href={`/messages/${c.id}`}
+                className="card hover-lift flex items-center gap-3 p-3"
+              >
               <Avatar
                 src={c.avatarUrl}
                 name={c.title}
@@ -42,11 +44,12 @@ export default async function MessagesPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
                   <span className="flex min-w-0 items-center gap-1.5 font-medium">
+                    {c.pinned && <span className="shrink-0 text-brand">📌</span>}
                     {c.isGroup && <span className="shrink-0 text-muted">👥</span>}
                     <span className="truncate">{c.title}</span>
                   </span>
                   {c.lastMessage && (
-                    <span className="shrink-0 text-xs text-muted">
+                    <span className="shrink-0 pr-6 text-xs text-muted">
                       {timeAgo(c.lastMessage.createdAt)}
                     </span>
                   )}
@@ -67,7 +70,8 @@ export default async function MessagesPage() {
                   )}
                 </div>
               </div>
-            </Link>
+              </Link>
+            </div>
           ))}
         </div>
       )}

@@ -28,6 +28,12 @@ export function Sidebar({ user, items }: Props) {
 
       <nav className="card flex flex-col gap-0.5 p-2">
         <NavLinks items={items} variant="sidebar" />
+        <Link
+          href="/saved"
+          className="press flex items-center rounded-xl px-3 py-2 text-sm font-medium transition-colors hover:bg-surface-2"
+        >
+          <span className="mr-2">🔖</span>Сохранённое
+        </Link>
         <form action={logoutUser}>
           <button
             type="submit"

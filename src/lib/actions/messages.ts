@@ -10,6 +10,7 @@ import {
   getConversationAccess,
   createGroupConversation,
 } from "@/lib/messages";
+import { sendPushToUser } from "@/lib/push";
 
 async function requireUserId(): Promise<string> {
   const session = await auth();
@@ -90,6 +91,22 @@ export async function sendMessage(
 
   revalidatePath(`/messages/${conversationId}`);
   revalidatePath("/messages");
+
+  // Веб-пуш остальным участникам (best-effort).
+  const senderName = access.me.user.displayName;
+  const groupTitle = access.convo.isGroup ? access.convo.title : null;
+  const title = groupTitle ? `${senderName} · ${groupTitle}` : senderName;
+  const body = text ? text.slice(0, 140) : "📷 Фото";
+  await Promise.all(
+    access.others.map((p) =>
+      sendPushToUser(p.userId, {
+        title,
+        body,
+        url: `/messages/${conversationId}`,
+        tag: `conv-${conversationId}`,
+      }),
+    ),
+  );
 }
 
 /** Поставить/снять/сменить реакцию на сообщение (одна реакция на пользователя). */
@@ -189,6 +206,21 @@ export async function renameConversation(conversationId: string, title: string) 
     data: { title: clean.slice(0, 60) },
   });
   revalidatePath(`/messages/${conversationId}`);
+  revalidatePath("/messages");
+}
+
+/** Закрепить/открепить беседу (в списке зрителя). */
+export async function togglePinConversation(conversationId: string) {
+  const userId = await requireUserId();
+  const part = await prisma.conversationParticipant.findUnique({
+    where: { conversationId_userId: { conversationId, userId } },
+    select: { id: true, pinnedAt: true },
+  });
+  if (!part) return;
+  await prisma.conversationParticipant.update({
+    where: { id: part.id },
+    data: { pinnedAt: part.pinnedAt ? null : new Date() },
+  });
   revalidatePath("/messages");
 }
 

@@ -36,6 +36,17 @@ export type FeedPost = {
     avatarUrl: string | null;
   } | null;
   comments: FeedComment[];
+  // Сохранил ли текущий пользователь пост в закладки.
+  savedByMe: boolean;
+  // Если это репост — превью оригинала.
+  repostOf: {
+    id: string;
+    content: string;
+    imageUrl: string | null;
+    createdAt: Date;
+    author: PublicAuthor;
+    group: { slug: string; name: string; avatarUrl: string | null } | null;
+  } | null;
 };
 
 const authorSelect = {
@@ -50,8 +61,8 @@ const groupSelect = {
   avatarUrl: true,
 } as const;
 
-// Как загружаем пост со связями.
-function postArgs() {
+// Как загружаем пост со связями (bookmarks фильтруем по зрителю).
+function postArgs(viewerId: string) {
   return {
     include: {
       author: { select: authorSelect },
@@ -62,26 +73,47 @@ function postArgs() {
       },
       // Все реакции — группируем и считаем в shape().
       likes: { select: { emoji: true, userId: true } },
+      // Закладка текущего пользователя (если есть).
+      bookmarks: { where: { userId: viewerId }, select: { id: true } },
+      // Оригинал репоста — для встроенного превью.
+      repostOf: {
+        select: {
+          id: true,
+          content: true,
+          imageUrl: true,
+          createdAt: true,
+          author: { select: authorSelect },
+          group: { select: groupSelect },
+        },
+      },
     },
     orderBy: { createdAt: "desc" as const },
   };
 }
 
-function shape(
-  post: {
+type RawPost = {
+  id: string;
+  content: string;
+  imageUrl: string | null;
+  editedAt: Date | null;
+  createdAt: Date;
+  authorId: string;
+  author: PublicAuthor;
+  group: { slug: string; name: string; avatarUrl: string | null } | null;
+  comments: FeedComment[];
+  likes: { emoji: string; userId: string }[];
+  bookmarks: { id: string }[];
+  repostOf: {
     id: string;
     content: string;
     imageUrl: string | null;
-    editedAt: Date | null;
     createdAt: Date;
-    authorId: string;
     author: PublicAuthor;
     group: { slug: string; name: string; avatarUrl: string | null } | null;
-    comments: FeedComment[];
-    likes: { emoji: string; userId: string }[];
-  },
-  viewerId: string,
-): FeedPost {
+  } | null;
+};
+
+function shape(post: RawPost, viewerId: string): FeedPost {
   // Группируем реакции по эмодзи.
   const counts = new Map<string, number>();
   for (const l of post.likes) counts.set(l.emoji, (counts.get(l.emoji) ?? 0) + 1);
@@ -102,6 +134,8 @@ function shape(
     author: post.author,
     group: post.group,
     comments: post.comments,
+    savedByMe: post.bookmarks.length > 0,
+    repostOf: post.repostOf,
   };
 }
 
@@ -134,7 +168,7 @@ export async function getFeedPosts(viewerId: string): Promise<FeedPost[]> {
         { groupId: { in: groupIds } },
       ],
     },
-    ...postArgs(),
+    ...postArgs(viewerId),
     take: 50,
   });
   return posts.map((p) => shape(p, viewerId));
@@ -147,7 +181,7 @@ export async function getUserPosts(
 ): Promise<FeedPost[]> {
   const posts = await prisma.post.findMany({
     where: { authorId, groupId: null },
-    ...postArgs(),
+    ...postArgs(viewerId),
     take: 50,
   });
   return posts.map((p) => shape(p, viewerId));
@@ -160,8 +194,46 @@ export async function getGroupPosts(
 ): Promise<FeedPost[]> {
   const posts = await prisma.post.findMany({
     where: { groupId },
-    ...postArgs(),
+    ...postArgs(viewerId),
     take: 50,
   });
   return posts.map((p) => shape(p, viewerId));
+}
+
+/** Поиск постов по тексту (в т.ч. #хэштег) среди доступных зрителю записей. */
+export async function searchPosts(
+  query: string,
+  viewerId: string,
+): Promise<FeedPost[]> {
+  const q = query.trim();
+  if (!q) return [];
+  const [friendIds, groupIds] = await Promise.all([
+    getFriendIds(viewerId),
+    getUserGroupIds(viewerId),
+  ]);
+  const posts = await prisma.post.findMany({
+    where: {
+      content: { contains: q, mode: "insensitive" },
+      OR: [
+        { authorId: { in: [viewerId, ...friendIds] }, groupId: null },
+        { groupId: { in: groupIds } },
+      ],
+    },
+    ...postArgs(viewerId),
+    take: 50,
+  });
+  return posts.map((p) => shape(p, viewerId));
+}
+
+/** Сохранённые пользователем посты (закладки). */
+export async function getBookmarkedPosts(viewerId: string): Promise<FeedPost[]> {
+  const bookmarks = await prisma.bookmark.findMany({
+    where: { userId: viewerId },
+    orderBy: { createdAt: "desc" },
+    select: {
+      post: { include: postArgs(viewerId).include },
+    },
+    take: 50,
+  });
+  return bookmarks.map((b) => shape(b.post as RawPost, viewerId));
 }
