@@ -4,6 +4,7 @@ import { getFriendState } from "@/lib/friends";
 import { searchUsers, searchMessages } from "@/lib/search";
 import { searchPosts } from "@/lib/posts";
 import { Avatar } from "@/components/ui/avatar";
+import { Tabs } from "@/components/ui/tabs";
 import { PostCard } from "@/components/post-card";
 import { UserCard } from "@/components/user-card";
 import { timeAgo } from "@/lib/format";
@@ -88,21 +89,17 @@ export default async function SearchPage({
       ) : (
         <>
           {/* Вкладки */}
-          <div className="mb-4 flex gap-2">
-            {tabs.map((t) => (
-              <Link
-                key={t.key}
-                href={`/search?q=${encodeURIComponent(query)}&tab=${t.key}`}
-                className={`press rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
-                  activeTab === t.key
-                    ? "bg-brand-gradient text-white shadow-[var(--shadow-glow)]"
-                    : "btn-ghost"
-                }`}
-              >
-                {t.label}
-                <span className="ml-1.5 opacity-70">{t.count}</span>
-              </Link>
-            ))}
+          <div className="mb-4">
+            <Tabs
+              layoutId="search-tabs"
+              active={activeTab}
+              items={tabs.map((t) => ({
+                key: t.key,
+                label: t.label,
+                count: t.count,
+                href: `/search?q=${encodeURIComponent(query)}&tab=${t.key}`,
+              }))}
+            />
           </div>
 
           {/* Люди */}

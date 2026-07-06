@@ -45,10 +45,13 @@ export function Avatar({ src, name, size = 40, online }: Props) {
       {inner}
       {online && (
         <span
-          className="absolute right-0 bottom-0 rounded-full bg-green-500 ring-2 ring-surface"
+          className="absolute right-0 bottom-0"
           style={{ width: dot, height: dot }}
           title="в сети"
-        />
+        >
+          <span className="absolute inset-0 animate-ping rounded-full bg-green-500 opacity-60" />
+          <span className="absolute inset-0 rounded-full bg-green-500 ring-2 ring-surface" />
+        </span>
       )}
     </span>
   );

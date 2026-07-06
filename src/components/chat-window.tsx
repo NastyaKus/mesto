@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import { Avatar } from "@/components/ui/avatar";
 import { Lightbox } from "@/components/ui/lightbox";
@@ -62,6 +63,7 @@ export function ChatWindow({
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const lastTypingSent = useRef(0);
+  const reduce = useReducedMotion();
 
   // Карта участников по id — для имён/аватаров отправителей в группах.
   const byId = useMemo(() => {
@@ -241,31 +243,41 @@ export function ChatWindow({
             Пока нет сообщений. Напишите первым!
           </p>
         )}
-        {all.map((m) => (
-          <MessageRow
-            key={m.id}
-            m={m}
-            mine={m.senderId === meId}
-            isGroup={isGroup}
-            sender={byId.get(m.senderId)}
-            reactionsAllowed={REACTIONS}
-            onReact={(emoji) => react(m.id, emoji)}
-            onReply={() =>
-              setReplyTo({
-                id: m.id,
-                author: byId.get(m.senderId)?.displayName ?? "",
-                preview: m.content.slice(0, 80) || "📷 Фото",
-              })
-            }
-            onEdit={() => setEditing({ id: m.id, content: m.content })}
-            onDelete={() => remove(m.id)}
-            receipt={
-              m.senderId === meId && !m.pending && !m.deleted
-                ? receiptFor(isGroup, readByCount(m.createdAt))
-                : null
-            }
-          />
-        ))}
+        <AnimatePresence initial={false}>
+          {all.map((m) => (
+            <motion.div
+              key={m.id}
+              layout={!reduce}
+              initial={reduce ? false : { opacity: 0, y: 14, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.9 }}
+              transition={{ type: "spring", stiffness: 500, damping: 34 }}
+            >
+              <MessageRow
+                m={m}
+                mine={m.senderId === meId}
+                isGroup={isGroup}
+                sender={byId.get(m.senderId)}
+                reactionsAllowed={REACTIONS}
+                onReact={(emoji) => react(m.id, emoji)}
+                onReply={() =>
+                  setReplyTo({
+                    id: m.id,
+                    author: byId.get(m.senderId)?.displayName ?? "",
+                    preview: m.content.slice(0, 80) || "📷 Фото",
+                  })
+                }
+                onEdit={() => setEditing({ id: m.id, content: m.content })}
+                onDelete={() => remove(m.id)}
+                receipt={
+                  m.senderId === meId && !m.pending && !m.deleted
+                    ? receiptFor(isGroup, readByCount(m.createdAt))
+                    : null
+                }
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
 
       {typingNames.length > 0 && (

@@ -15,6 +15,7 @@ import { isOnline } from "@/lib/messages";
 import { presenceLabel } from "@/lib/format";
 import { Avatar } from "@/components/ui/avatar";
 import { ProfileAvatar } from "@/components/profile-avatar";
+import { Tabs } from "@/components/ui/tabs";
 import { Lightbox } from "@/components/ui/lightbox";
 import { FriendButton } from "@/components/friend-button";
 import { MessageButton } from "@/components/message-button";
@@ -225,24 +226,16 @@ export default async function ProfilePage({
       {/* Вкладки */}
       {!restricted && (
         <>
-          <div className="flex flex-wrap gap-2">
-            {tabs.map((t) => (
-              <Link
-                key={t.key}
-                href={`/profile/${username}?tab=${t.key}`}
-                className={`press rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
-                  activeTab === t.key
-                    ? "bg-brand-gradient text-white shadow-[var(--shadow-glow)]"
-                    : "btn-ghost"
-                }`}
-              >
-                {t.label}
-                {t.count !== undefined && (
-                  <span className="ml-1.5 opacity-70">{t.count}</span>
-                )}
-              </Link>
-            ))}
-          </div>
+          <Tabs
+            layoutId="profile-tabs"
+            active={activeTab}
+            items={tabs.map((t) => ({
+              key: t.key,
+              label: t.label,
+              count: t.count,
+              href: `/profile/${username}?tab=${t.key}`,
+            }))}
+          />
 
           {/* Записи */}
           {activeTab === "posts" && (

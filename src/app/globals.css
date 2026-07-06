@@ -182,6 +182,7 @@ body::before {
 .animate-pop { animation: pop 0.35s var(--ease-spring); }
 .animate-scale-in { animation: scale-in 0.28s var(--ease-spring) both; }
 .animate-slide-up { animation: slide-up 0.32s var(--ease-out) both; }
+.animate-bob { animation: bob 3s ease-in-out infinite; }
 
 /* Появление элементов списка каскадом */
 .stagger > * { animation: fade-up 0.5s var(--ease-out) both; }

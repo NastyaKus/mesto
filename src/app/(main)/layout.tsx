@@ -11,6 +11,8 @@ import { RightRail } from "@/components/right-rail";
 import { SearchBar } from "@/components/search-bar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Presence } from "@/components/presence";
+import { LiveRefresh } from "@/components/live-refresh";
+import { Wordmark } from "@/components/logo";
 import { Avatar } from "@/components/ui/avatar";
 import type { NavItem } from "@/components/nav-links";
 
@@ -48,14 +50,12 @@ export default async function MainLayout({
   return (
     <div className="min-h-screen">
       <Presence />
+      <LiveRefresh />
       {/* Верхняя панель */}
       <header className="glass sticky top-0 z-10 border-b border-border">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5 sm:gap-6">
-          <Link
-            href="/feed"
-            className="brand-gradient press text-2xl font-extrabold tracking-tight"
-          >
-            mesto
+          <Link href="/feed" className="shrink-0">
+            <Wordmark />
           </Link>
           <SearchBar />
           <ThemeToggle initial={theme} />

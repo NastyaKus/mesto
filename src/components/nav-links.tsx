@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion } from "framer-motion";
 
 export type NavItem = {
   href: string;
@@ -45,9 +46,15 @@ export function NavLinks({
               </span>
               <span className="truncate">{item.label}</span>
               {item.badge > 0 && (
-                <span className="bg-brand-gradient animate-pop absolute top-1 right-[20%] min-w-4 rounded-full px-1 text-[10px] font-semibold text-white shadow">
+                <motion.span
+                  key={item.badge}
+                  initial={{ scale: 0.4, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 520, damping: 16 }}
+                  className="bg-brand-gradient absolute top-1 right-[20%] min-w-4 rounded-full px-1 text-[10px] font-semibold text-white shadow"
+                >
                   {item.badge}
-                </span>
+                </motion.span>
               )}
             </Link>
           );
@@ -75,13 +82,17 @@ export function NavLinks({
               {item.label}
             </span>
             {item.badge > 0 && (
-              <span
-                className={`animate-pop min-w-5 rounded-full px-2 py-0.5 text-center text-xs font-semibold ${
+              <motion.span
+                key={item.badge}
+                initial={{ scale: 0.4, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 520, damping: 16 }}
+                className={`min-w-5 rounded-full px-2 py-0.5 text-center text-xs font-semibold ${
                   active ? "bg-white/25 text-white" : "bg-brand-gradient text-white"
                 }`}
               >
                 {item.badge}
-              </span>
+              </motion.span>
             )}
           </Link>
         );
